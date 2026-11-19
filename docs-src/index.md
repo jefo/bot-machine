@@ -92,7 +92,7 @@ else if (callback === "confirm") ...
 
 ## Статус
 
-Документация описывает стабильную ветку **0.1.11**. Более новая 0.2.0 находится в разработке и меняет API; здесь её нет.
+Документация описывает снимок `jefo/bot-machine`: стабильную **0.1.11** плюс портфолио-правки — экспорт Redis/UI-kit, валидация `output`, необязательный logger. Оригинальный npm-пакет 0.1.11 — та же архитектура. Более новая 0.2.0 находится в разработке и меняет API; здесь её нет.
 
 Оригинальный репозиторий: [kaizin-lab/bot-machine](https://github.com/kaizin-lab/bot-machine)  
 npm: [`@bot-machine/telegram-sdk`](https://www.npmjs.com/package/@bot-machine/telegram-sdk)
