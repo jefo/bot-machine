@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Быстрый старт — Bot Machine</title>
+	<meta name="description" content="Соберём бота, который спрашивает имя и здоровается." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="index.html">Обзор</a>
+<a href="getting-started.html" class="active">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="concepts/flows.html">Flow и состояния</a>
+<a href="concepts/views.html">Views</a>
+<a href="concepts/commands.html">Commands и Queries</a>
+<a href="concepts/router.html">Router</a>
+<a href="concepts/context.html">Context</a>
+<a href="concepts/sessions.html">Sessions</a>
+<a href="concepts/keyboard.html">Keyboard</a>
+<a href="concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="guides/callbacks.html">Callback-кнопки</a>
+<a href="guides/text-input.html">Текстовый ввод</a>
+<a href="guides/appointment.html">Форма записи</a>
+<a href="guides/errors.html">Ошибки и валидация</a>
+<a href="guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="architecture.html">Архитектура</a>
+<a href="production.html">Production</a>
+<a href="limits.html">Ограничения</a>
+<a href="faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="быстрый-старт">Быстрый старт</h1>
+<p>Соберём бота, который спрашивает имя и здоровается.</p>
+<h2 id="требования">Требования</h2>
+<ul>
+<li><a href="https://bun.com">Bun</a> 1.2+</li>
+<li>Токен от <a href="https://t.me/BotFather">@BotFather</a></li>
+</ul>
+<h2 id="установка">Установка</h2>
+<pre><code class="hljs language-bash">bun add @bot-machine/telegram-sdk @bot-machine/telegram-client zod
+</code></pre><p><code>@bot-machine/telegram-sdk</code> — фреймворк. <code>@bot-machine/telegram-client</code> — тонкий клиент Bot API. <code>zod</code> — схемы для команд и запросов.</p>
+<h2 id="код">Код</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">TelegramClient</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-client&quot;</span>;
+<span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">Router</span>,
+  <span class="hljs-title class_">FlowController</span>,
+  session,
+  createFlow,
+  createCommand,
+  createQuery
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+<span class="hljs-keyword">import</span> { z } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;zod&quot;</span>;
+
+<span class="hljs-keyword">const</span> token = process.<span class="hljs-property">env</span>.<span class="hljs-property">BOT_TOKEN</span>;
+<span class="hljs-keyword">if</span> (!token) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&quot;BOT_TOKEN is required&quot;</span>);
+
+<span class="hljs-keyword">const</span> client = <span class="hljs-keyword">new</span> <span class="hljs-title class_">TelegramClient</span>(token);
+<span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>();
+
+<span class="hljs-comment">// Сессия нужна flow, чтобы помнить состояние между сообщениями.</span>
+router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">session</span>());
+
+router.<span class="hljs-title function_">onCommand</span>(<span class="hljs-string">&quot;start&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Привет! Давайте познакомимся.&quot;</span>);
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">enterFlow</span>(<span class="hljs-string">&quot;welcome&quot;</span>);
+});
+
+<span class="hljs-keyword">const</span> welcome = <span class="hljs-title function_">createFlow</span>(<span class="hljs-string">&quot;welcome&quot;</span>, {
+  <span class="hljs-attr">index</span>: {
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({ <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Как вас зовут?&quot;</span> }),
+    <span class="hljs-attr">onText</span>: {
+      <span class="hljs-string">&quot;:name&quot;</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;saveName&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">name</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">min</span>(<span class="hljs-number">1</span>) }),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ name }, ctx) =&gt; {
+            ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> = name;
+          }
+        }),
+        <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;greet&quot;</span>
+      }
+    }
+  },
+  <span class="hljs-attr">greet</span>: {
+    <span class="hljs-attr">onEnter</span>: <span class="hljs-title function_">createQuery</span>({
+      <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;getName&quot;</span>,
+      <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; ({ <span class="hljs-attr">name</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span> })
+    }),
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> ({ name }: { <span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span> }) =&gt; ({
+      <span class="hljs-attr">text</span>: <span class="hljs-string">`Привет, <span class="hljs-subst">${name}</span>!`</span>
+    })
+  }
+});
+
+router.<span class="hljs-title function_">addFlow</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">FlowController</span>(welcome.<span class="hljs-property">config</span>, welcome.<span class="hljs-property">name</span>));
+
+<span class="hljs-keyword">await</span> client.<span class="hljs-title function_">startPolling</span>(<span class="hljs-function">(<span class="hljs-params">update</span>) =&gt;</span> router.<span class="hljs-title function_">handle</span>(update, client));
+</code></pre><p>Запуск:</p>
+<pre><code class="hljs language-bash">BOT_TOKEN=123456:AA... bun run index.ts
+</code></pre><p>В Telegram: <code>/start</code> → имя → приветствие.</p>
+<h2 id="что-произошло">Что произошло</h2>
+<ol>
+<li><code>Router</code> получил update от Telegram.</li>
+<li><code>session()</code> загрузил сессию пользователя.</li>
+<li><code>/start</code> вызвал <code>ctx.enterFlow(&quot;welcome&quot;)</code>.</li>
+<li><code>FlowController</code> отрисовал состояние <code>index</code>.</li>
+<li>Текст «Иван» совпал с паттерном <code>:name</code>.</li>
+<li><code>createCommand</code> проверил вход по Zod и сохранил имя в сессию.</li>
+<li>Flow перешёл в <code>greet</code>, <code>onEnter</code> достал имя, view отрисовал ответ.</li>
+</ol>
+<h2 id="демо-без-токена">Демо без токена</h2>
+<p>В репозитории есть сценарий записи на приём, который работает в консоли:</p>
+<pre><code class="hljs language-bash">bun install
+bun run demo
+</code></pre><p>Он проходит старт → услуга → имя → телефон → подтверждение → готово и печатает сессию. Telegram-токен не нужен.</p>
+<h2 id="структура-проекта">Структура проекта</h2>
+<pre><code class="hljs language-text">my-bot/
+├── index.ts
+├── package.json
+└── tsconfig.json
+</code></pre><p>Для большого бота:</p>
+<pre><code class="hljs language-text">src/
+├── bot.ts              router, middleware, flows
+├── flows/
+│   ├── appointment.ts
+│   └── support.ts
+├── views/
+│   ├── appointment.ts
+│   └── common.ts
+└── commands/
+    ├── booking.ts
+    └── profile.ts
+</code></pre><h2 id="дальше">Дальше</h2>
+<ul>
+<li><a href="./concepts/flows.html">Flow и состояния</a></li>
+<li><a href="./concepts/views.html">Views</a></li>
+<li><a href="./concepts/commands.html">Commands и Queries</a></li>
+</ul>
+
+				<div class="pager">
+				<a href="index.html"><small>Назад</small>Обзор</a>
+				<a class="next" href="concepts/flows.html"><small>Дальше</small>Flow и состояния</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#требования">Требования</a>
+<a class="h2" href="#установка">Установка</a>
+<a class="h2" href="#код">Код</a>
+<a class="h2" href="#что-произошло">Что произошло</a>
+<a class="h2" href="#демо-без-токена">Демо без токена</a>
+<a class="h2" href="#структура-проекта">Структура проекта</a>
+<a class="h2" href="#дальше">Дальше</a>
+		</aside>
+	</div>
+	<script src="assets/docs.js"></script>
+</body>
+</html>

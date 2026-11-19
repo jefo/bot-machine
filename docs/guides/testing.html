@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Тесты — Bot Machine</title>
+	<meta name="description" content="Фреймворк не требует Telegram для тестов. Flow можно проверить с фейковым AppContext, а команды и запросы — напрямую." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="../concepts/flows.html">Flow и состояния</a>
+<a href="../concepts/views.html">Views</a>
+<a href="../concepts/commands.html">Commands и Queries</a>
+<a href="../concepts/router.html">Router</a>
+<a href="../concepts/context.html">Context</a>
+<a href="../concepts/sessions.html">Sessions</a>
+<a href="../concepts/keyboard.html">Keyboard</a>
+<a href="../concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="callbacks.html">Callback-кнопки</a>
+<a href="text-input.html">Текстовый ввод</a>
+<a href="appointment.html">Форма записи</a>
+<a href="errors.html">Ошибки и валидация</a>
+<a href="testing.html" class="active">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="тесты">Тесты</h1>
+<p>Фреймворк не требует Telegram для тестов. Flow можно проверить с фейковым <code>AppContext</code>, а команды и запросы — напрямую.</p>
+<h2 id="запуск">Запуск</h2>
+<pre><code class="hljs language-bash">bun <span class="hljs-built_in">test</span>
+bunx tsc --noEmit
+</code></pre><p>В репозитории <strong>108 тестов</strong> и 185 assertions.</p>
+<h2 id="фейковый-контекст">Фейковый контекст</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> <span class="hljs-keyword">type</span> { <span class="hljs-title class_">AppContext</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">createContext</span>(<span class="hljs-params"><span class="hljs-attr">session</span>: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">unknown</span>&gt; = {}</span>): <span class="hljs-title class_">AppContext</span> {
+  <span class="hljs-keyword">const</span> <span class="hljs-attr">sent</span>: <span class="hljs-built_in">string</span>[] = [];
+
+  <span class="hljs-keyword">const</span> ctx = {
+    <span class="hljs-attr">update</span>: { <span class="hljs-attr">message</span>: { <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;/start&quot;</span>, <span class="hljs-attr">chat</span>: { <span class="hljs-attr">id</span>: <span class="hljs-number">1</span> }, <span class="hljs-attr">from</span>: { <span class="hljs-attr">id</span>: <span class="hljs-number">1</span> } } },
+    <span class="hljs-attr">client</span>: {} <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>,
+    <span class="hljs-attr">router</span>: {} <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>,
+    <span class="hljs-attr">logger</span>: {
+      <span class="hljs-title function_">info</span>(<span class="hljs-params"></span>) {}, <span class="hljs-title function_">warn</span>(<span class="hljs-params"></span>) {}, <span class="hljs-title function_">debug</span>(<span class="hljs-params"></span>) {}, <span class="hljs-title function_">trace</span>(<span class="hljs-params"></span>) {}, <span class="hljs-title function_">fatal</span>(<span class="hljs-params"></span>) {},
+      <span class="hljs-attr">error</span>: <span class="hljs-variable language_">console</span>.<span class="hljs-property">error</span>,
+      <span class="hljs-title function_">child</span>(<span class="hljs-params"></span>) { <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>; }
+    },
+    <span class="hljs-attr">from</span>: { <span class="hljs-attr">id</span>: <span class="hljs-number">1</span> },
+    <span class="hljs-attr">chat</span>: { <span class="hljs-attr">id</span>: <span class="hljs-number">1</span> },
+    session,
+    <span class="hljs-attr">state</span>: {},
+    <span class="hljs-attr">params</span>: {},
+    <span class="hljs-keyword">async</span> <span class="hljs-title function_">reply</span>(<span class="hljs-params"><span class="hljs-attr">text</span>: <span class="hljs-built_in">string</span></span>) { sent.<span class="hljs-title function_">push</span>(text); <span class="hljs-keyword">return</span> {} <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>; },
+    <span class="hljs-keyword">async</span> <span class="hljs-title function_">editMessageText</span>(<span class="hljs-params"><span class="hljs-attr">text</span>: <span class="hljs-built_in">string</span></span>) { sent.<span class="hljs-title function_">push</span>(text); <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; },
+    <span class="hljs-keyword">async</span> <span class="hljs-title function_">deleteMessage</span>(<span class="hljs-params"></span>) { <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; },
+    <span class="hljs-keyword">async</span> <span class="hljs-title function_">answerCallbackQuery</span>(<span class="hljs-params"></span>) { <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>; },
+    <span class="hljs-keyword">async</span> <span class="hljs-title function_">enterFlow</span>(<span class="hljs-params"></span>) {}
+  } <span class="hljs-keyword">as</span> <span class="hljs-built_in">unknown</span> <span class="hljs-keyword">as</span> <span class="hljs-title class_">AppContext</span>;
+
+  <span class="hljs-keyword">return</span> <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>(ctx, { sent });
+}
+</code></pre><h2 id="тест-flow">Тест flow</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { describe, expect, it } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;bun:test&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">FlowController</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+<span class="hljs-keyword">import</span> { appointmentFlow } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./appointment&quot;</span>;
+
+<span class="hljs-keyword">const</span> flow = <span class="hljs-keyword">new</span> <span class="hljs-title class_">FlowController</span>(appointmentFlow.<span class="hljs-property">config</span>, appointmentFlow.<span class="hljs-property">name</span>);
+
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">act</span>(<span class="hljs-params"><span class="hljs-attr">ctx</span>: <span class="hljs-title class_">AppContext</span>, <span class="hljs-attr">update</span>: <span class="hljs-built_in">any</span></span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-built_in">string</span>&gt; {
+  (ctx <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>).<span class="hljs-property">update</span> = update;
+  <span class="hljs-keyword">await</span> flow.<span class="hljs-title function_">handle</span>(ctx);
+  <span class="hljs-keyword">return</span> (ctx <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>).<span class="hljs-property">sent</span>.<span class="hljs-title function_">at</span>(-<span class="hljs-number">1</span>);
+}
+
+<span class="hljs-title function_">it</span>(<span class="hljs-string">&quot;собирает запись&quot;</span>, <span class="hljs-title function_">async</span> () =&gt; {
+  <span class="hljs-keyword">const</span> ctx = <span class="hljs-title function_">createContext</span>({
+    <span class="hljs-attr">flowName</span>: <span class="hljs-string">&quot;appointment&quot;</span>,
+    <span class="hljs-attr">flowState</span>: <span class="hljs-string">&quot;index&quot;</span>
+  });
+
+  <span class="hljs-title function_">expect</span>(<span class="hljs-keyword">await</span> <span class="hljs-title function_">act</span>(ctx, { <span class="hljs-attr">message</span>: { <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;/start&quot;</span> } }))
+    .<span class="hljs-title function_">toContain</span>(<span class="hljs-string">&quot;Запись на приём&quot;</span>);
+
+  <span class="hljs-title function_">expect</span>(<span class="hljs-keyword">await</span> <span class="hljs-title function_">act</span>(ctx, { <span class="hljs-attr">callback_query</span>: { <span class="hljs-attr">data</span>: <span class="hljs-string">&quot;book&quot;</span>, <span class="hljs-attr">message</span>: { <span class="hljs-attr">message_id</span>: <span class="hljs-number">1</span> } } }))
+    .<span class="hljs-title function_">toContain</span>(<span class="hljs-string">&quot;Выберите услугу&quot;</span>);
+
+  <span class="hljs-comment">// ... имя, телефон, подтверждение</span>
+
+  <span class="hljs-title function_">expect</span>(ctx.<span class="hljs-property">session</span>).<span class="hljs-title function_">toMatchObject</span>({
+    <span class="hljs-attr">service</span>: <span class="hljs-string">&quot;Консультация&quot;</span>,
+    <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;Иван&quot;</span>,
+    <span class="hljs-attr">phone</span>: <span class="hljs-string">&quot;+7 999 123-45-67&quot;</span>,
+    <span class="hljs-attr">flowState</span>: <span class="hljs-string">&quot;done&quot;</span>
+  });
+});
+</code></pre><h2 id="тест-команды">Тест команды</h2>
+<pre><code class="hljs language-ts"><span class="hljs-title function_">it</span>(<span class="hljs-string">&quot;сохраняет имя&quot;</span>, <span class="hljs-title function_">async</span> () =&gt; {
+  <span class="hljs-keyword">const</span> ctx = { <span class="hljs-attr">session</span>: {}, <span class="hljs-attr">logger</span>: <span class="hljs-variable language_">console</span> } <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>;
+  <span class="hljs-keyword">await</span> saveNameCommand.<span class="hljs-title function_">execute</span>({ <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;Иван&quot;</span> }, ctx);
+  <span class="hljs-title function_">expect</span>(ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span>).<span class="hljs-title function_">toBe</span>(<span class="hljs-string">&quot;Иван&quot;</span>);
+});
+</code></pre><h2 id="тест-запроса">Тест запроса</h2>
+<pre><code class="hljs language-ts"><span class="hljs-title function_">it</span>(<span class="hljs-string">&quot;читает имя из сессии&quot;</span>, <span class="hljs-title function_">async</span> () =&gt; {
+  <span class="hljs-keyword">const</span> ctx = { <span class="hljs-attr">session</span>: { <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;Иван&quot;</span> }, <span class="hljs-attr">logger</span>: <span class="hljs-variable language_">console</span> } <span class="hljs-keyword">as</span> <span class="hljs-built_in">any</span>;
+  <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> getNameQuery.<span class="hljs-title function_">execute</span>(<span class="hljs-literal">undefined</span>, ctx);
+  <span class="hljs-title function_">expect</span>(result).<span class="hljs-title function_">toEqual</span>({ <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;Иван&quot;</span> });
+});
+</code></pre><h2 id="тест-роутера">Тест роутера</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>();
+<span class="hljs-keyword">const</span> handler = <span class="hljs-title function_">mock</span>(<span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;ok&quot;</span>);
+});
+router.<span class="hljs-title function_">onCommand</span>(<span class="hljs-string">&quot;start&quot;</span>, handler);
+
+<span class="hljs-keyword">const</span> ctx = <span class="hljs-title function_">createContext</span>();
+<span class="hljs-keyword">await</span> router.<span class="hljs-title function_">route</span>(ctx);
+<span class="hljs-title function_">expect</span>(handler).<span class="hljs-title function_">toHaveBeenCalled</span>();
+</code></pre><h2 id="снимки">Снимки</h2>
+<p>UI-kit использует snapshot-тесты для клавиатур и сообщений. Если меняете текст или разметку, обновите снимки:</p>
+<pre><code class="hljs language-bash">bun <span class="hljs-built_in">test</span> --update-snapshots
+</code></pre><h2 id="что-проверять">Что проверять</h2>
+<ul>
+<li>переходы и <code>nextState</code>;</li>
+<li><code>refresh</code> и выход из flow;</li>
+<li>параметры <code>:name</code> и <code>::id</code>;</li>
+<li>Zod-валидацию;</li>
+<li>сохранение в сессию;</li>
+<li>ошибки и fallback;</li>
+<li>клавиатуры и форматирование.</li>
+</ul>
+<h2 id="дальше">Дальше</h2>
+<ul>
+<li><a href="./appointment.html">Форма записи</a></li>
+<li><a href="../limits.html">Ограничения</a></li>
+</ul>
+
+				<div class="pager">
+				<a href="errors.html"><small>Назад</small>Ошибки и валидация</a>
+				<a class="next" href="../api/reference.html"><small>Дальше</small>Справочник</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#запуск">Запуск</a>
+<a class="h2" href="#фейковый-контекст">Фейковый контекст</a>
+<a class="h2" href="#тест-flow">Тест flow</a>
+<a class="h2" href="#тест-команды">Тест команды</a>
+<a class="h2" href="#тест-запроса">Тест запроса</a>
+<a class="h2" href="#тест-роутера">Тест роутера</a>
+<a class="h2" href="#снимки">Снимки</a>
+<a class="h2" href="#что-проверять">Что проверять</a>
+<a class="h2" href="#дальше">Дальше</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Архитектура — Bot Machine</title>
+	<meta name="description" content="Bot Machine — тонкий слой между Telegram и бизнес-логикой. Он не пытается быть Bot API-клиентом: за транспорт отвечает @bot-machine/telegram-client." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="index.html">Обзор</a>
+<a href="getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="concepts/flows.html">Flow и состояния</a>
+<a href="concepts/views.html">Views</a>
+<a href="concepts/commands.html">Commands и Queries</a>
+<a href="concepts/router.html">Router</a>
+<a href="concepts/context.html">Context</a>
+<a href="concepts/sessions.html">Sessions</a>
+<a href="concepts/keyboard.html">Keyboard</a>
+<a href="concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="guides/callbacks.html">Callback-кнопки</a>
+<a href="guides/text-input.html">Текстовый ввод</a>
+<a href="guides/appointment.html">Форма записи</a>
+<a href="guides/errors.html">Ошибки и валидация</a>
+<a href="guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="architecture.html" class="active">Архитектура</a>
+<a href="production.html">Production</a>
+<a href="limits.html">Ограничения</a>
+<a href="faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="архитектура">Архитектура</h1>
+<p>Bot Machine — тонкий слой между Telegram и бизнес-логикой. Он не пытается быть Bot API-клиентом: за транспорт отвечает <code>@bot-machine/telegram-client</code>.</p>
+<h2 id="поток-update">Поток update</h2>
+<pre><code class="hljs language-text">Telegram update
+      │
+      ▼
+TelegramClient.startPolling
+      │
+      ▼
+Router.handle(update, client)
+      │
+      ├─ создаёт BotContext
+      ├─ запускает middleware
+      │
+      ▼
+session()  ── загружает session по user id
+      │
+      ▼
+Router.route(ctx)
+      │
+      ├─ активный flow? ──► FlowController.handle
+      │                         ├─ onAction / onText
+      │                         ├─ Command (Zod input/output)
+      │                         ├─ nextState / refresh
+      │                         ├─ onEnter Query
+      │                         └─ Component → MessagePayload
+      │
+      ├─ onCommand / onText / onCallbackQuery
+      │
+      └─ fallback
+      │
+      ▼
+ctx.reply / ctx.editMessageText
+      │
+      ▼
+Telegram Bot API
+</code></pre><h2 id="слои">Слои</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Слой</th>
+<th>Файлы</th>
+<th>Ответственность</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Транспорт</td>
+<td><code>@bot-machine/telegram-client</code></td>
+<td>HTTP к Bot API, polling</td>
+</tr>
+<tr>
+<td>Маршрутизация</td>
+<td><code>router.ts</code></td>
+<td>middleware, routes, flows</td>
+</tr>
+<tr>
+<td>Контекст</td>
+<td><code>context.ts</code></td>
+<td>update, reply, edit, session, enterFlow</td>
+</tr>
+<tr>
+<td>Flow</td>
+<td><code>flow.ts</code></td>
+<td>состояния, переходы, onEnter, render</td>
+</tr>
+<tr>
+<td>Бизнес-логика</td>
+<td><code>core.ts</code></td>
+<td>createCommand / createQuery, Zod</td>
+</tr>
+<tr>
+<td>Состояние</td>
+<td><code>session.ts</code></td>
+<td>in-memory и Redis</td>
+</tr>
+<tr>
+<td>Представление</td>
+<td><code>keyboard.ts</code>, <code>text.ts</code>, <code>ui-kit/</code></td>
+<td>payload, кнопки, форматирование</td>
+</tr>
+</tbody></table></div>
+<h2 id="решения">Решения</h2>
+<h3 id="flow-как-данные">Flow как данные</h3>
+<p>Состояния — это объект. Новый экран не требует нового класса или ветки в роутере. Сценарий можно прочитать целиком.</p>
+<h3 id="schema-first">Schema-first</h3>
+<p>Вход и выход команд описаны Zod. AI-агенту и человеку не нужно угадывать форму данных. Ошибка ловится до бизнес-логики.</p>
+<h3 id="view-отделён-от-логики">View отделён от логики</h3>
+<p>Команда меняет состояние, view показывает результат. Это упрощает тесты и замену экрана.</p>
+<h3 id="express-подобный-роутер">Express-подобный роутер</h3>
+<p><code>router.onCommand</code>, <code>onText</code>, <code>onCallbackQuery</code>, <code>use</code>, <code>fallback</code> знакомы по веб-фреймворкам. Кривая входа низкая.</p>
+<h3 id="ai-first">AI-first</h3>
+<p>Фреймворк проектировался под AI-агентов: явные границы, типы, предсказуемые переходы. Это не значит, что внутри есть LLM. Это значит, что код проще генерировать и проверять.</p>
+<h2 id="persona">Persona</h2>
+<p>В Bot Machine нет персоны как обязательной сущности. Участник диалога — это Telegram user id и сессия. Персона — отдельная экспериментальная абстракция для омниканальности; FSM-движок от неё не зависит.</p>
+<h2 id="компромиссы">Компромиссы</h2>
+<ul>
+<li>Больше структуры, чем в «одном файле с обработчиками».</li>
+<li>Нужны TypeScript и Zod.</li>
+<li>Flow описан кодом, а не визуально.</li>
+<li>Telegram-контекст зашит в <code>BotContext</code>; другие каналы потребуют адаптер.</li>
+</ul>
+
+				<div class="pager">
+				<a href="api/reference.html"><small>Назад</small>Справочник</a>
+				<a class="next" href="production.html"><small>Дальше</small>Production</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#поток-update">Поток update</a>
+<a class="h2" href="#слои">Слои</a>
+<a class="h2" href="#решения">Решения</a>
+<a class="h3" href="#flow-как-данные">Flow как данные</a>
+<a class="h3" href="#schema-first">Schema-first</a>
+<a class="h3" href="#view-отделён-от-логики">View отделён от логики</a>
+<a class="h3" href="#express-подобный-роутер">Express-подобный роутер</a>
+<a class="h3" href="#ai-first">AI-first</a>
+<a class="h2" href="#persona">Persona</a>
+<a class="h2" href="#компромиссы">Компромиссы</a>
+		</aside>
+	</div>
+	<script src="assets/docs.js"></script>
+</body>
+</html>

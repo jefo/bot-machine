@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>FAQ — Bot Machine</title>
+	<meta name="description" content="В смысле «меньше кода на сценарий» — да. В смысле «без кода» — нет." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="index.html">Обзор</a>
+<a href="getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="concepts/flows.html">Flow и состояния</a>
+<a href="concepts/views.html">Views</a>
+<a href="concepts/commands.html">Commands и Queries</a>
+<a href="concepts/router.html">Router</a>
+<a href="concepts/context.html">Context</a>
+<a href="concepts/sessions.html">Sessions</a>
+<a href="concepts/keyboard.html">Keyboard</a>
+<a href="concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="guides/callbacks.html">Callback-кнопки</a>
+<a href="guides/text-input.html">Текстовый ввод</a>
+<a href="guides/appointment.html">Форма записи</a>
+<a href="guides/errors.html">Ошибки и валидация</a>
+<a href="guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="architecture.html">Архитектура</a>
+<a href="production.html">Production</a>
+<a href="limits.html">Ограничения</a>
+<a href="faq.html" class="active">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="faq">FAQ</h1>
+<h2 id="это-low-code">Это low-code?</h2>
+<p>В смысле «меньше кода на сценарий» — да. В смысле «без кода» — нет.</p>
+<p>Bot Machine убирает повторяющиеся части: роутинг, сессии, переходы, клавиатуры, ответы. Сценарий всё равно описывается в TypeScript. Такой low-code удобен для AI-агентов: у flow, view и command явные границы.</p>
+<h2 id="внутри-есть-llm">Внутри есть LLM?</h2>
+<p>Нет. Фреймворк не вызывает модели и не принимает решения. Он помогает AI-агенту писать и менять код, но runtime детерминирован.</p>
+<h2 id="нужна-ли-persona">Нужна ли persona?</h2>
+<p>Нет. В Bot Machine её нет. Участник диалога — Telegram user id и сессия. Persona — отдельная экспериментальная абстракция для омниканальности, не часть FSM-движка.</p>
+<h2 id="почему-не-grammy-или-telegraf">Почему не grammY или Telegraf?</h2>
+<p>Они дают доступ к Bot API и middleware. Bot Machine даёт модель сценария: flow, состояния, view, command. Если нужен полный контроль над API, берите grammY/Telegraf. Если нужен читаемый многошаговый сценарий — Bot Machine.</p>
+<h2 id="можно-ли-на-javascript">Можно ли на JavaScript?</h2>
+<p>Технически да, но теряются типы и часть смысла. Фреймворк рассчитан на TypeScript и Zod.</p>
+<h2 id="как-добавить-новый-экран">Как добавить новый экран?</h2>
+<p>Добавьте ключ в <code>createFlow</code>:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> flow = <span class="hljs-title function_">createFlow</span>(<span class="hljs-string">&quot;appointment&quot;</span>, {
+  <span class="hljs-attr">index</span>: {...},
+  <span class="hljs-attr">service</span>: {...},
+  <span class="hljs-attr">confirm</span>: {...}
+});
+</code></pre><p>Затем добавьте переход:</p>
+<pre><code class="hljs language-ts"><span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;confirm&quot;</span>
+</code></pre><h2 id="как-сохранить-данные-между-сообщениями">Как сохранить данные между сообщениями?</h2>
+<p>Через <code>ctx.session</code>. Подключите <code>session()</code> и пишите в сессию из команды.</p>
+<h2 id="как-пережить-перезапуск">Как пережить перезапуск?</h2>
+<p>Подключите <code>RedisSessionStore</code>. In-memory сессии теряются.</p>
+<h2 id="как-тестировать-без-telegram">Как тестировать без Telegram?</h2>
+<p>Создайте фейковый <code>AppContext</code> и вызывайте <code>FlowController.handle</code> или <code>router.route</code>. Пример — в <a href="./guides/testing.html">Тестах</a>.</p>
+<h2 id="где-смотреть-примеры">Где смотреть примеры?</h2>
+<ul>
+<li><code>examples/appointment.ts</code> — полный сценарий записи.</li>
+<li><code>examples/demo.ts</code> — консольный прогон.</li>
+<li><code>examples/appointment.test.ts</code> — тест сценария.</li>
+<li><code>src/flows/</code> — счётчик и переименование.</li>
+</ul>
+<h2 id="какая-версия-актуальна">Какая версия актуальна?</h2>
+<p>Документация описывает стабильную <strong>0.1.11</strong>. Ветка 0.2.0 меняет API и находится в разработке.</p>
+<h2 id="можно-ли-использовать-в-коммерческом-проекте">Можно ли использовать в коммерческом проекте?</h2>
+<p>Да, лицензия MIT. Проверьте зависимости и замените демо-токены.</p>
+
+				<div class="pager">
+				<a href="limits.html"><small>Назад</small>Ограничения</a>
+				<span></span>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#это-low-code">Это low-code?</a>
+<a class="h2" href="#внутри-есть-llm">Внутри есть LLM?</a>
+<a class="h2" href="#нужна-ли-persona">Нужна ли persona?</a>
+<a class="h2" href="#почему-не-grammy-или-telegraf">Почему не grammY или Telegraf?</a>
+<a class="h2" href="#можно-ли-на-javascript">Можно ли на JavaScript?</a>
+<a class="h2" href="#как-добавить-новый-экран">Как добавить новый экран?</a>
+<a class="h2" href="#как-сохранить-данные-между-сообщениями">Как сохранить данные между сообщениями?</a>
+<a class="h2" href="#как-пережить-перезапуск">Как пережить перезапуск?</a>
+<a class="h2" href="#как-тестировать-без-telegram">Как тестировать без Telegram?</a>
+<a class="h2" href="#где-смотреть-примеры">Где смотреть примеры?</a>
+<a class="h2" href="#какая-версия-актуальна">Какая версия актуальна?</a>
+<a class="h2" href="#можно-ли-использовать-в-коммерческом-проекте">Можно ли использовать в коммерческом проекте?</a>
+		</aside>
+	</div>
+	<script src="assets/docs.js"></script>
+</body>
+</html>

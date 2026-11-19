@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Views — Bot Machine</title>
+	<meta name="description" content="View — это функция, которая получает данные и возвращает сообщение для Telegram. Логика и представление разделены: команда меняет состояние, view показывает результат." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="flows.html">Flow и состояния</a>
+<a href="views.html" class="active">Views</a>
+<a href="commands.html">Commands и Queries</a>
+<a href="router.html">Router</a>
+<a href="context.html">Context</a>
+<a href="sessions.html">Sessions</a>
+<a href="keyboard.html">Keyboard</a>
+<a href="text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="../guides/callbacks.html">Callback-кнопки</a>
+<a href="../guides/text-input.html">Текстовый ввод</a>
+<a href="../guides/appointment.html">Форма записи</a>
+<a href="../guides/errors.html">Ошибки и валидация</a>
+<a href="../guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="views">Views</h1>
+<p>View — это функция, которая получает данные и возвращает сообщение для Telegram. Логика и представление разделены: команда меняет состояние, view показывает результат.</p>
+<h2 id="сигнатура">Сигнатура</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">type</span> <span class="hljs-title class_">Component</span> = <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">props</span>: <span class="hljs-built_in">any</span></span>) =&gt;</span> <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">MessagePayload</span>&gt;;
+</code></pre><p><code>MessagePayload</code>:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">MessagePayload</span> {
+  <span class="hljs-attr">text</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">parse_mode</span>?: <span class="hljs-string">&quot;HTML&quot;</span> | <span class="hljs-string">&quot;MarkdownV2&quot;</span>;
+  <span class="hljs-attr">reply_markup</span>?: {
+    <span class="hljs-attr">inline_keyboard</span>: <span class="hljs-title class_">InlineKeyboardButton</span>[][];
+  };
+}
+</code></pre><h2 id="пример">Пример</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Keyboard</span>, format } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">interface</span> <span class="hljs-title class_">BookingProps</span> {
+  <span class="hljs-attr">service</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">phone</span>: <span class="hljs-built_in">string</span>;
+}
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">BookingSummary</span>(<span class="hljs-params"><span class="hljs-attr">props</span>: <span class="hljs-title class_">BookingProps</span></span>) {
+  <span class="hljs-keyword">const</span> text = <span class="hljs-title function_">format</span>(<span class="hljs-function">(<span class="hljs-params">{ b, n }</span>) =&gt;</span> [
+    <span class="hljs-title function_">b</span>(<span class="hljs-string">&quot;Проверьте запись&quot;</span>), <span class="hljs-title function_">n</span>(<span class="hljs-number">2</span>),
+    <span class="hljs-string">&quot;Услуга: &quot;</span>, props.<span class="hljs-property">service</span>, <span class="hljs-title function_">n</span>(),
+    <span class="hljs-string">&quot;Имя: &quot;</span>, props.<span class="hljs-property">name</span>, <span class="hljs-title function_">n</span>(),
+    <span class="hljs-string">&quot;Телефон: &quot;</span>, props.<span class="hljs-property">phone</span>
+  ]);
+
+  <span class="hljs-keyword">return</span> {
+    <span class="hljs-attr">text</span>: text.<span class="hljs-property">text</span>,
+    <span class="hljs-attr">parse_mode</span>: text.<span class="hljs-property">parseMode</span>,
+    <span class="hljs-attr">reply_markup</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+      .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Подтвердить&quot;</span>, <span class="hljs-string">&quot;confirm&quot;</span>)
+      .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Отменить&quot;</span>, <span class="hljs-string">&quot;cancel&quot;</span>)
+      .<span class="hljs-title function_">inline</span>()
+  };
+}
+</code></pre><pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> flow = <span class="hljs-title function_">createFlow</span>(<span class="hljs-string">&quot;appointment&quot;</span>, {
+  <span class="hljs-attr">confirm</span>: {
+    <span class="hljs-attr">onEnter</span>: <span class="hljs-title function_">createQuery</span>({
+      <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;summary&quot;</span>,
+      <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; ({
+        <span class="hljs-attr">service</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">service</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>,
+        <span class="hljs-attr">name</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>,
+        <span class="hljs-attr">phone</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">phone</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>
+      })
+    }),
+    <span class="hljs-attr">component</span>: <span class="hljs-title class_">BookingSummary</span>,
+    <span class="hljs-attr">onAction</span>: {
+      <span class="hljs-attr">confirm</span>: { <span class="hljs-attr">command</span>: confirmCommand, <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;done&quot;</span> },
+      <span class="hljs-attr">cancel</span>: { <span class="hljs-attr">command</span>: cancelCommand }
+    }
+  }
+});
+</code></pre><h2 id="правила">Правила</h2>
+<ul>
+<li>View не ходит в базу и не вызывает API. Данные приходят из <code>onEnter</code>.</li>
+<li>View не меняет сессию. Это работа команды.</li>
+<li>View возвращает только <code>MessagePayload</code>.</li>
+<li>Кнопки собираются через <code>Keyboard</code>, текст — через <code>format</code> или обычную строку.</li>
+<li>Если view нужны разные данные для разных состояний, делайте отдельные view, а не ветки внутри одного.</li>
+</ul>
+<h2 id="почему-это-удобно">Почему это удобно</h2>
+<ul>
+<li>View можно тестировать отдельно: передать props и проверить payload.</li>
+<li>Один и тот же view можно использовать в нескольких состояниях.</li>
+<li>AI-агенту проще менять экран, не задевая бизнес-логику.</li>
+<li><code>MessagePayload</code> — единственный контракт с Telegram.</li>
+</ul>
+<h2 id="когда-не-нужен-отдельный-файл">Когда не нужен отдельный файл</h2>
+<p>Для маленького бота view можно оставить inline:</p>
+<pre><code class="hljs language-ts"><span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({
+  <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Готово&quot;</span>,
+  <span class="hljs-attr">reply_markup</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>().<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Заново&quot;</span>, <span class="hljs-string">&quot;restart&quot;</span>).<span class="hljs-title function_">inline</span>()
+})
+</code></pre><p>Если экран используется больше одного раза или содержит больше 10 строк, выносите в функцию.</p>
+<h2 id="дальше">Дальше</h2>
+<ul>
+<li><a href="./keyboard.html">Keyboard</a> — кнопки.</li>
+<li><a href="./text.html">Text</a> — форматирование.</li>
+</ul>
+
+				<div class="pager">
+				<a href="flows.html"><small>Назад</small>Flow и состояния</a>
+				<a class="next" href="commands.html"><small>Дальше</small>Commands и Queries</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#сигнатура">Сигнатура</a>
+<a class="h2" href="#пример">Пример</a>
+<a class="h2" href="#правила">Правила</a>
+<a class="h2" href="#почему-это-удобно">Почему это удобно</a>
+<a class="h2" href="#когда-не-нужен-отдельный-файл">Когда не нужен отдельный файл</a>
+<a class="h2" href="#дальше">Дальше</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

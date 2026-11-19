@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Router — Bot Machine</title>
+	<meta name="description" content="Router — точка входа для всех обновлений Telegram. Он похож на приложение Express: middleware, маршруты, fallback." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="flows.html">Flow и состояния</a>
+<a href="views.html">Views</a>
+<a href="commands.html">Commands и Queries</a>
+<a href="router.html" class="active">Router</a>
+<a href="context.html">Context</a>
+<a href="sessions.html">Sessions</a>
+<a href="keyboard.html">Keyboard</a>
+<a href="text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="../guides/callbacks.html">Callback-кнопки</a>
+<a href="../guides/text-input.html">Текстовый ввод</a>
+<a href="../guides/appointment.html">Форма записи</a>
+<a href="../guides/errors.html">Ошибки и валидация</a>
+<a href="../guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="router">Router</h1>
+<p><code>Router</code> — точка входа для всех обновлений Telegram. Он похож на приложение Express: middleware, маршруты, fallback.</p>
+<h2 id="создание">Создание</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Router</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>();
+</code></pre><p>Логгер можно передать:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { createLogger } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>({ <span class="hljs-attr">logger</span>: <span class="hljs-title function_">createLogger</span>() });
+</code></pre><h2 id="маршруты">Маршруты</h2>
+<h3 id="команды">Команды</h3>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">onCommand</span>(<span class="hljs-string">&quot;start&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Привет&quot;</span>);
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">enterFlow</span>(<span class="hljs-string">&quot;welcome&quot;</span>);
+});
+</code></pre><p>Поддерживается <code>@username</code> и аргументы:</p>
+<pre><code class="hljs language-text">/start
+/start@my_bot
+/start hello
+</code></pre><h3 id="callback-кнопки">Callback-кнопки</h3>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">onCallbackQuery</span>(<span class="hljs-string">&quot;confirm&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">answerCallbackQuery</span>();
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Подтверждено&quot;</span>);
+});
+</code></pre><p>Паттерн с параметром:</p>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">onCallbackQuery</span>(<span class="hljs-string">&quot;item::id&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">const</span> { id } = ctx.<span class="hljs-property">params</span>;
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">answerCallbackQuery</span>();
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">editMessageText</span>(<span class="hljs-string">`Товар <span class="hljs-subst">${id}</span>`</span>);
+});
+</code></pre><h3 id="текст">Текст</h3>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">onText</span>(<span class="hljs-string">&quot;hello&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;И вам привет&quot;</span>);
+});
+
+router.<span class="hljs-title function_">onText</span>(<span class="hljs-string">&quot;weather :city&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">`Погода: <span class="hljs-subst">${ctx.params.city}</span>`</span>);
+});
+</code></pre><h3 id="flow">Flow</h3>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">FlowController</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+router.<span class="hljs-title function_">addFlow</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">FlowController</span>(flow.<span class="hljs-property">config</span>, flow.<span class="hljs-property">name</span>));
+</code></pre><p>Если у пользователя в сессии есть <code>flowName</code>, роутер сначала отдаёт update этому flow. Только если flow не обработал — проверяются stateless-маршруты.</p>
+<h2 id="порядок">Порядок</h2>
+<ol>
+<li>Middleware.</li>
+<li>Активный flow.</li>
+<li><code>onCommand</code>.</li>
+<li><code>onText</code>.</li>
+<li><code>onCallbackQuery</code>.</li>
+<li><code>fallback</code>.</li>
+</ol>
+<p>Callback-маршруты проверяются после текста, но у callback и текста разные источники, поэтому конфликтов обычно нет.</p>
+<h2 id="middleware">Middleware</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { session } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">session</span>());
+
+router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">async</span> (ctx, next) =&gt; {
+  <span class="hljs-keyword">const</span> started = <span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>();
+  <span class="hljs-keyword">await</span> <span class="hljs-title function_">next</span>();
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;ms&quot;</span>, <span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>() - started);
+});
+</code></pre><p>Middleware получает <code>ctx</code> и <code>next</code>. Вызов <code>next()</code> передаёт управление дальше.</p>
+<p>Встроенный <code>loggingMiddleware</code> логирует update и время обработки.</p>
+<h2 id="fallback">Fallback</h2>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">fallback</span>(<span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Не понял. Нажмите /start.&quot;</span>);
+});
+</code></pre><p>Fallback срабатывает, если не совпал ни один маршрут и пользователь не в flow.</p>
+<h2 id="handle">handle</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> client.<span class="hljs-title function_">startPolling</span>(<span class="hljs-function">(<span class="hljs-params">update</span>) =&gt;</span> router.<span class="hljs-title function_">handle</span>(update, client));
+</code></pre><p><code>router.handle(update, client)</code>:</p>
+<ul>
+<li>создаёт <code>BotContext</code>;</li>
+<li>запускает middleware;</li>
+<li>маршрутизирует update;</li>
+<li>ловит ошибки и логирует их.</li>
+</ul>
+<h2 id="ручной-вызов">Ручной вызов</h2>
+<p>В тестах можно вызвать <code>router.route(ctx)</code> с готовым контекстом. Это быстрее и не требует Telegram.</p>
+<h2 id="дальше">Дальше</h2>
+<ul>
+<li><a href="./context.html">Context</a></li>
+<li><a href="./sessions.html">Sessions</a></li>
+</ul>
+
+				<div class="pager">
+				<a href="commands.html"><small>Назад</small>Commands и Queries</a>
+				<a class="next" href="context.html"><small>Дальше</small>Context</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#создание">Создание</a>
+<a class="h2" href="#маршруты">Маршруты</a>
+<a class="h3" href="#команды">Команды</a>
+<a class="h3" href="#callback-кнопки">Callback-кнопки</a>
+<a class="h3" href="#текст">Текст</a>
+<a class="h3" href="#flow">Flow</a>
+<a class="h2" href="#порядок">Порядок</a>
+<a class="h2" href="#middleware">Middleware</a>
+<a class="h2" href="#fallback">Fallback</a>
+<a class="h2" href="#handle">handle</a>
+<a class="h2" href="#ручной-вызов">Ручной вызов</a>
+<a class="h2" href="#дальше">Дальше</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

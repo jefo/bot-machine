@@ -24,8 +24,8 @@ export class Router {
 	private flows: Record<string, FlowController> = {};
 	private logger: ILogger;
 
-	constructor(options: { logger: ILogger }) {
-		this.logger = options.logger;
+	constructor(options: { logger?: ILogger } = {}) {
+		this.logger = options.logger ?? (console as unknown as ILogger);
 	}
 
 	/**

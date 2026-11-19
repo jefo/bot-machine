@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Keyboard — Bot Machine</title>
+	<meta name="description" content="Keyboard — fluent-билдер для inline и reply-клавиатур. Он избавляет от ручной сборки inline_keyboard." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="flows.html">Flow и состояния</a>
+<a href="views.html">Views</a>
+<a href="commands.html">Commands и Queries</a>
+<a href="router.html">Router</a>
+<a href="context.html">Context</a>
+<a href="sessions.html">Sessions</a>
+<a href="keyboard.html" class="active">Keyboard</a>
+<a href="text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="../guides/callbacks.html">Callback-кнопки</a>
+<a href="../guides/text-input.html">Текстовый ввод</a>
+<a href="../guides/appointment.html">Форма записи</a>
+<a href="../guides/errors.html">Ошибки и валидация</a>
+<a href="../guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="keyboard">Keyboard</h1>
+<p><code>Keyboard</code> — fluent-билдер для inline и reply-клавиатур. Он избавляет от ручной сборки <code>inline_keyboard</code>.</p>
+<h2 id="inline">Inline</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Keyboard</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> keyboard = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Консультация&quot;</span>, <span class="hljs-string">&quot;consult&quot;</span>)
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Диагностика&quot;</span>, <span class="hljs-string">&quot;diagnostics&quot;</span>)
+  .<span class="hljs-title function_">row</span>()
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Назад&quot;</span>, <span class="hljs-string">&quot;back&quot;</span>);
+
+<span class="hljs-keyword">const</span> payload = {
+  <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Выберите услугу&quot;</span>,
+  <span class="hljs-attr">reply_markup</span>: keyboard.<span class="hljs-title function_">inline</span>()
+};
+</code></pre><p><code>inline()</code> возвращает:</p>
+<pre><code class="hljs language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;inline_keyboard&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;text&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Консультация&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;callback_data&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;consult&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;text&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Диагностика&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;callback_data&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;diagnostics&quot;</span> <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;text&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Назад&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;callback_data&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;back&quot;</span> <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</code></pre><h2 id="reply">Reply</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> keyboard = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Отправить телефон&quot;</span>, <span class="hljs-string">&quot;phone&quot;</span>)
+  .<span class="hljs-title function_">requestContact</span>(<span class="hljs-string">&quot;Мой контакт&quot;</span>)
+  .<span class="hljs-title function_">row</span>()
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Отмена&quot;</span>, <span class="hljs-string">&quot;cancel&quot;</span>);
+
+<span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Выберите действие&quot;</span>, {
+  <span class="hljs-attr">reply_markup</span>: keyboard.<span class="hljs-title function_">reply</span>({ <span class="hljs-attr">resize_keyboard</span>: <span class="hljs-literal">true</span> })
+});
+</code></pre><p><code>reply()</code> возвращает <code>ReplyKeyboardMarkup</code>. Чтобы убрать клавиатуру:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Готово&quot;</span>, { <span class="hljs-attr">reply_markup</span>: <span class="hljs-title class_">Keyboard</span>.<span class="hljs-title function_">remove</span>() });
+</code></pre><h2 id="кнопки">Кнопки</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Метод</th>
+<th>Что делает</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>.text(label, callbackData)</code></td>
+<td>callback-кнопка</td>
+</tr>
+<tr>
+<td><code>.url(label, url)</code></td>
+<td>ссылка</td>
+</tr>
+<tr>
+<td><code>.login(label, loginUrl)</code></td>
+<td>Telegram Login</td>
+</tr>
+<tr>
+<td><code>.switchInline(label, query)</code></td>
+<td>inline-режим</td>
+</tr>
+<tr>
+<td><code>.webApp(label, webAppInfo)</code></td>
+<td>Web App</td>
+</tr>
+<tr>
+<td><code>.pay(label)</code></td>
+<td>оплата</td>
+</tr>
+<tr>
+<td><code>.requestContact(label)</code></td>
+<td>запрос контакта</td>
+</tr>
+<tr>
+<td><code>.requestLocation(label)</code></td>
+<td>запрос геолокации</td>
+</tr>
+<tr>
+<td><code>.requestPoll(label, type?)</code></td>
+<td>создание опроса</td>
+</tr>
+<tr>
+<td><code>.row()</code></td>
+<td>начать новый ряд</td>
+</tr>
+</tbody></table></div>
+<h2 id="правила">Правила</h2>
+<ul>
+<li>Не больше 8 кнопок в ряду, иначе Telegram сожмёт текст.</li>
+<li><code>callback_data</code> — строка до 64 байт. Не кладите туда JSON с кириллицей.</li>
+<li>Для параметров используйте короткие коды: <code>item::42</code>, а не <code>{&quot;id&quot;:42}</code>.</li>
+<li>В одном ряду не смешивайте inline и reply-кнопки.</li>
+</ul>
+<h2 id="пример-с-параметром">Пример с параметром</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Удалить&quot;</span>, <span class="hljs-string">&quot;delete::42&quot;</span>)
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Открыть&quot;</span>, <span class="hljs-string">&quot;open::42&quot;</span>)
+</code></pre><pre><code class="hljs language-ts"><span class="hljs-attr">onAction</span>: {
+  <span class="hljs-string">&quot;delete::id&quot;</span>: {
+    <span class="hljs-attr">command</span>: deleteCommand,
+    <span class="hljs-attr">refresh</span>: <span class="hljs-literal">true</span>
+  }
+}
+</code></pre><p><code>ctx.params.id</code> будет <code>&quot;42&quot;</code>.</p>
+<h2 id="дальше">Дальше</h2>
+<ul>
+<li><a href="./text.html">Text</a></li>
+<li><a href="../guides/callbacks.html">Callback-кнопки</a></li>
+</ul>
+
+				<div class="pager">
+				<a href="sessions.html"><small>Назад</small>Sessions</a>
+				<a class="next" href="text.html"><small>Дальше</small>Text</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#inline">Inline</a>
+<a class="h2" href="#reply">Reply</a>
+<a class="h2" href="#кнопки">Кнопки</a>
+<a class="h2" href="#правила">Правила</a>
+<a class="h2" href="#пример-с-параметром">Пример с параметром</a>
+<a class="h2" href="#дальше">Дальше</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

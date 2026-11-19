@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Ограничения — Bot Machine</title>
+	<meta name="description" content="Bot Machine — не универсальный фреймворк для всех ботов. Вот где он заканчивается." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="index.html">Обзор</a>
+<a href="getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="concepts/flows.html">Flow и состояния</a>
+<a href="concepts/views.html">Views</a>
+<a href="concepts/commands.html">Commands и Queries</a>
+<a href="concepts/router.html">Router</a>
+<a href="concepts/context.html">Context</a>
+<a href="concepts/sessions.html">Sessions</a>
+<a href="concepts/keyboard.html">Keyboard</a>
+<a href="concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="guides/callbacks.html">Callback-кнопки</a>
+<a href="guides/text-input.html">Текстовый ввод</a>
+<a href="guides/appointment.html">Форма записи</a>
+<a href="guides/errors.html">Ошибки и валидация</a>
+<a href="guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="architecture.html">Архитектура</a>
+<a href="production.html">Production</a>
+<a href="limits.html" class="active">Ограничения</a>
+<a href="faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="ограничения">Ограничения</h1>
+<p>Bot Machine — не универсальный фреймворк для всех ботов. Вот где он заканчивается.</p>
+<h2 id="код-не-визуальный-редактор">Код, не визуальный редактор</h2>
+<p>Flow описывается в TypeScript. Нет drag-and-drop, конструктора или админки. Это осознанно: код можно тестировать, ревьюить и генерировать AI-агентом.</p>
+<h2 id="typescript-и-zod">TypeScript и Zod</h2>
+<p>Без типов и схем фреймворк теряет половину смысла. Если проект на чистом JavaScript, лучше взять что-то проще.</p>
+<h2 id="telegram-контекст">Telegram-контекст</h2>
+<p><code>BotContext</code> знает про <code>Update</code>, <code>chat</code>, <code>message</code>, <code>callback_query</code>. Для WhatsApp, VK или веба нужен отдельный адаптер. Мультиканальность — в планах, не в 0.1.11.</p>
+<h2 id="сессии">Сессии</h2>
+<ul>
+<li>In-memory по умолчанию: данные теряются при перезапуске.</li>
+<li>Redis-хранилище есть, но его нужно подключить и обслуживать.</li>
+<li>Нет TTL из коробки.</li>
+<li>Нет блокировок: два одновременных update могут перезаписать сессию.</li>
+</ul>
+<h2 id="один-polling-процесс">Один polling-процесс</h2>
+<p>На один токен — один <code>startPolling</code>. Для нескольких инстансов нужен webhook или внешняя блокировка.</p>
+<h2 id="нет-crm-и-аналитики">Нет CRM и аналитики</h2>
+<p>Фреймворк не хранит лиды, не считает воронку и не отправляет карточки менеджеру. Это задачи приложения.</p>
+<h2 id="нет-llm-runtime">Нет LLM-runtime</h2>
+<p>Bot Machine помогает AI-агенту писать код, но не вызывает модель. Если нужен LLM в диалоге, добавьте его в команду или отдельный сервис.</p>
+<h2 id="нет-версионирования-flow">Нет версионирования flow</h2>
+<p>Если вы переименовали состояние, старые сессии с <code>flowState</code> могут сломаться. Миграций нет; продумайте совместимость или очистку сессий при деплое.</p>
+<h2 id="сравнение">Сравнение</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Задача</th>
+<th>Bot Machine</th>
+<th>grammY / Telegraf</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Многошаговый сценарий</td>
+<td>flow из коробки</td>
+<td>вручную или плагин</td>
+</tr>
+<tr>
+<td>Роутинг</td>
+<td>Express-подобный</td>
+<td>middleware/роутер</td>
+</tr>
+<tr>
+<td>Схемы данных</td>
+<td>Zod на входе и выходе</td>
+<td>вручную</td>
+</tr>
+<tr>
+<td>Визуальный редактор</td>
+<td>нет</td>
+<td>нет</td>
+</tr>
+<tr>
+<td>Полный Bot API</td>
+<td>через telegram-client</td>
+<td>да</td>
+</tr>
+<tr>
+<td>Низкий порог входа</td>
+<td>нужен TS</td>
+<td>ниже</td>
+</tr>
+</tbody></table></div>
+<h2 id="когда-не-использовать">Когда не использовать</h2>
+<ul>
+<li>Один экран и две кнопки: обычный обработчик проще.</li>
+<li>Нужен полный контроль над Bot API: берите grammY/Telegraf.</li>
+<li>Нужен визуальный конструктор: это не он.</li>
+<li>Нужен мультиканальный бот сегодня: адаптеров нет.</li>
+</ul>
+
+				<div class="pager">
+				<a href="production.html"><small>Назад</small>Production</a>
+				<a class="next" href="faq.html"><small>Дальше</small>FAQ</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#код-не-визуальный-редактор">Код, не визуальный редактор</a>
+<a class="h2" href="#typescript-и-zod">TypeScript и Zod</a>
+<a class="h2" href="#telegram-контекст">Telegram-контекст</a>
+<a class="h2" href="#сессии">Сессии</a>
+<a class="h2" href="#один-polling-процесс">Один polling-процесс</a>
+<a class="h2" href="#нет-crm-и-аналитики">Нет CRM и аналитики</a>
+<a class="h2" href="#нет-llm-runtime">Нет LLM-runtime</a>
+<a class="h2" href="#нет-версионирования-flow">Нет версионирования flow</a>
+<a class="h2" href="#сравнение">Сравнение</a>
+<a class="h2" href="#когда-не-использовать">Когда не использовать</a>
+		</aside>
+	</div>
+	<script src="assets/docs.js"></script>
+</body>
+</html>

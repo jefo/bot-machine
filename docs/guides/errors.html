@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Ошибки и валидация — Bot Machine</title>
+	<meta name="description" content="В Bot Machine ошибки делятся на три слоя: ввод, бизнес-логика и транспорт." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="../concepts/flows.html">Flow и состояния</a>
+<a href="../concepts/views.html">Views</a>
+<a href="../concepts/commands.html">Commands и Queries</a>
+<a href="../concepts/router.html">Router</a>
+<a href="../concepts/context.html">Context</a>
+<a href="../concepts/sessions.html">Sessions</a>
+<a href="../concepts/keyboard.html">Keyboard</a>
+<a href="../concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="callbacks.html">Callback-кнопки</a>
+<a href="text-input.html">Текстовый ввод</a>
+<a href="appointment.html">Форма записи</a>
+<a href="errors.html" class="active">Ошибки и валидация</a>
+<a href="testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="ошибки-и-валидация">Ошибки и валидация</h1>
+<p>В Bot Machine ошибки делятся на три слоя: ввод, бизнес-логика и транспорт.</p>
+<h2 id="ввод">Ввод</h2>
+<p>Zod проверяет вход команды и запроса до <code>execute</code>.</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> savePhone = <span class="hljs-title function_">createCommand</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;savePhone&quot;</span>,
+  <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({
+    <span class="hljs-attr">phone</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">regex</span>(<span class="hljs-regexp">/^\+?\d{10,15}$/</span>, <span class="hljs-string">&quot;Некорректный номер&quot;</span>)
+  }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ phone }, ctx) =&gt; {
+    ctx.<span class="hljs-property">session</span>.<span class="hljs-property">phone</span> = phone;
+  }
+});
+</code></pre><p>Если пользователь написал <code>abc</code>, команда не выполнится. <code>FlowController</code> залогирует ошибку и отправит:</p>
+<pre><code class="hljs language-text">Произошла ошибка. Попробуйте еще раз.
+</code></pre><p>Состояние останется прежним, и пользователь сможет ввести значение снова.</p>
+<h2 id="своё-сообщение">Своё сообщение</h2>
+<p>Чтобы показать понятный текст, проверяйте значение в команде и возвращайте результат:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> savePhone = <span class="hljs-title function_">createCommand</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;savePhone&quot;</span>,
+  <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">phone</span>: z.<span class="hljs-title function_">string</span>() }),
+  <span class="hljs-attr">output</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">ok</span>: z.<span class="hljs-title function_">boolean</span>(), <span class="hljs-attr">reason</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">optional</span>() }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ phone }, ctx) =&gt; {
+    <span class="hljs-keyword">if</span> (!<span class="hljs-regexp">/^\+?\d{10,15}$/</span>.<span class="hljs-title function_">test</span>(phone)) {
+      <span class="hljs-keyword">return</span> { <span class="hljs-attr">ok</span>: <span class="hljs-literal">false</span>, <span class="hljs-attr">reason</span>: <span class="hljs-string">&quot;Похоже, это не номер. Попробуйте ещё раз.&quot;</span> };
+    }
+    ctx.<span class="hljs-property">session</span>.<span class="hljs-property">phone</span> = phone;
+    <span class="hljs-keyword">return</span> { <span class="hljs-attr">ok</span>: <span class="hljs-literal">true</span> };
+  }
+});
+</code></pre><p>В flow:</p>
+<pre><code class="hljs language-ts"><span class="hljs-attr">onText</span>: {
+  <span class="hljs-string">&quot;:phone&quot;</span>: {
+    <span class="hljs-attr">command</span>: savePhone,
+    <span class="hljs-attr">nextState</span>: <span class="hljs-function">(<span class="hljs-params">result</span>) =&gt;</span> (result.<span class="hljs-property">ok</span> ? <span class="hljs-string">&quot;confirm&quot;</span> : <span class="hljs-string">&quot;phone&quot;</span>)
+  }
+}
+</code></pre><p>Чтобы показать <code>reason</code>, передайте его в <code>onEnter</code> через <code>ctx.session</code> или используйте отдельное состояние ошибки.</p>
+<h2 id="бизнес-логика">Бизнес-логика</h2>
+<p>Исключение в <code>execute</code>:</p>
+<ul>
+<li>логируется;</li>
+<li>flow не меняет состояние;</li>
+<li>пользователь видит общее сообщение.</li>
+</ul>
+<p>Не глотайте ошибки молча. Если ошибка ожидаемая (нет слота, нет товара), верните результат с <code>ok: false</code> и обработайте его в <code>nextState</code>.</p>
+<h2 id="транспорт">Транспорт</h2>
+<p><code>ctx.editMessageText</code> может упасть, если сообщение нельзя редактировать (например, это фото или текст без callback). В stateless-обработчике проверяйте тип update или отправляйте новое сообщение.</p>
+<p><code>callback_data</code> длиннее 64 байт Telegram отклонит. Используйте короткие коды.</p>
+<h2 id="middleware">Middleware</h2>
+<p>Логирование и централизованная обработка:</p>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">async</span> (ctx, next) =&gt; {
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">await</span> <span class="hljs-title function_">next</span>();
+  } <span class="hljs-keyword">catch</span> (error) {
+    ctx.<span class="hljs-property">logger</span>.<span class="hljs-title function_">error</span>({ error }, <span class="hljs-string">&quot;update failed&quot;</span>);
+    <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Что-то пошло не так. Попробуйте позже.&quot;</span>);
+  }
+});
+</code></pre><p>Встроенный <code>loggingMiddleware</code> пишет update, время и ошибку.</p>
+<h2 id="fallback">Fallback</h2>
+<p>Если пользователь пишет что-то вне flow и маршрутов:</p>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">fallback</span>(<span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Не понял. Нажмите /start.&quot;</span>);
+});
+</code></pre><h2 id="чек-лист">Чек-лист</h2>
+<ul>
+<li>У каждой команды есть <code>input</code>-схема.</li>
+<li>Ожидаемые ошибки возвращаются как данные, а не исключения.</li>
+<li>Неожиданные ошибки логируются.</li>
+<li>Пользователь всегда видит следующий шаг.</li>
+<li><code>callback_data</code> короткий.</li>
+<li><code>answerCallbackQuery</code> вызывается на каждом callback.</li>
+</ul>
+
+				<div class="pager">
+				<a href="appointment.html"><small>Назад</small>Форма записи</a>
+				<a class="next" href="testing.html"><small>Дальше</small>Тесты</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#ввод">Ввод</a>
+<a class="h2" href="#своё-сообщение">Своё сообщение</a>
+<a class="h2" href="#бизнес-логика">Бизнес-логика</a>
+<a class="h2" href="#транспорт">Транспорт</a>
+<a class="h2" href="#middleware">Middleware</a>
+<a class="h2" href="#fallback">Fallback</a>
+<a class="h2" href="#чек-лист">Чек-лист</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

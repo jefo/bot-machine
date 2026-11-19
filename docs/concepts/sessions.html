@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Sessions — Bot Machine</title>
+	<meta name="description" content="Сессия хранит данные пользователя между сообщениями: состояние flow, имя, телефон, выбранные услуги." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="flows.html">Flow и состояния</a>
+<a href="views.html">Views</a>
+<a href="commands.html">Commands и Queries</a>
+<a href="router.html">Router</a>
+<a href="context.html">Context</a>
+<a href="sessions.html" class="active">Sessions</a>
+<a href="keyboard.html">Keyboard</a>
+<a href="text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="../guides/callbacks.html">Callback-кнопки</a>
+<a href="../guides/text-input.html">Текстовый ввод</a>
+<a href="../guides/appointment.html">Форма записи</a>
+<a href="../guides/errors.html">Ошибки и валидация</a>
+<a href="../guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="sessions">Sessions</h1>
+<p>Сессия хранит данные пользователя между сообщениями: состояние flow, имя, телефон, выбранные услуги.</p>
+<h2 id="подключение">Подключение</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Router</span>, session } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>();
+router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">session</span>());
+</code></pre><p>Без <code>session()</code> flow не сможет запомнить, на каком состоянии остановился пользователь.</p>
+<h2 id="использование">Использование</h2>
+<pre><code class="hljs language-ts">ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> = <span class="hljs-string">&quot;Иван&quot;</span>;
+ctx.<span class="hljs-property">session</span>.<span class="hljs-property">phone</span> = <span class="hljs-string">&quot;+7 999 123-45-67&quot;</span>;
+ctx.<span class="hljs-property">session</span>.<span class="hljs-property">flowName</span>;  <span class="hljs-comment">// &quot;appointment&quot;</span>
+ctx.<span class="hljs-property">session</span>.<span class="hljs-property">flowState</span>; <span class="hljs-comment">// &quot;phone&quot;</span>
+</code></pre><p>Ключ сессии — <code>ctx.from.id</code>, то есть Telegram user id.</p>
+<h2 id="in-memory">In-memory</h2>
+<p>По умолчанию используется <code>Map</code>:</p>
+<ul>
+<li>данные живут, пока живёт процесс;</li>
+<li>при перезапуске всё теряется;</li>
+<li>подходит для прототипа и тестов;</li>
+<li>не подходит для нескольких инстансов.</li>
+</ul>
+<h2 id="redis">Redis</h2>
+<p>Для production используйте <code>RedisSessionStore</code>.</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { createClient } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;redis&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Router</span>, session } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">RedisSessionStore</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> redis = <span class="hljs-title function_">createClient</span>({ <span class="hljs-attr">url</span>: process.<span class="hljs-property">env</span>.<span class="hljs-property">REDIS_URL</span> });
+<span class="hljs-keyword">await</span> redis.<span class="hljs-title function_">connect</span>();
+
+<span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>();
+router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">session</span>({ <span class="hljs-attr">store</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisSessionStore</span>(redis) }));
+</code></pre><p>Ключи хранятся с префиксом <code>session:</code>:</p>
+<pre><code class="hljs language-text">session:123456789 -&gt; {&quot;flowName&quot;:&quot;appointment&quot;,&quot;flowState&quot;:&quot;phone&quot;,&quot;name&quot;:&quot;Иван&quot;}
+</code></pre><p>Префикс можно изменить:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisSessionStore</span>(redis, { <span class="hljs-attr">prefix</span>: <span class="hljs-string">&quot;bot:session&quot;</span> })
+</code></pre><h2 id="что-хранить">Что хранить</h2>
+<ul>
+<li>идентификаторы, состояния, выбранные опции;</li>
+<li>небольшие строки и числа;</li>
+<li>данные, которые можно сериализовать в JSON.</li>
+</ul>
+<p>Не храните:</p>
+<ul>
+<li>огромные объекты и бинарные данные;</li>
+<li>клиенты БД и функции;</li>
+<li>секреты, которые не должны попасть в Redis.</li>
+</ul>
+<h2 id="очистка">Очистка</h2>
+<p>Flow очищает <code>flowName</code> и <code>flowState</code>, когда выходит. Остальные поля остаются, пока вы их не удалите:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">delete</span> ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span>;
+</code></pre><p>Middleware удаляет пустую сессию автоматически.</p>
+<h2 id="тесты">Тесты</h2>
+<p>В тестах можно передать свой store или работать с <code>ctx.session</code> напрямую:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> store = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Map</span>();
+<span class="hljs-keyword">const</span> middleware = <span class="hljs-title function_">session</span>({
+  <span class="hljs-attr">store</span>: {
+    <span class="hljs-attr">get</span>: <span class="hljs-title function_">async</span> (key) =&gt; store.<span class="hljs-title function_">get</span>(key),
+    <span class="hljs-attr">set</span>: <span class="hljs-title function_">async</span> (key, value) =&gt; { store.<span class="hljs-title function_">set</span>(key, value); },
+    <span class="hljs-attr">delete</span>: <span class="hljs-title function_">async</span> (key) =&gt; { store.<span class="hljs-title function_">delete</span>(key); }
+  }
+});
+</code></pre><h2 id="ограничения">Ограничения</h2>
+<ul>
+<li>Нет TTL по умолчанию: старые сессии живут, пока их не удалить.</li>
+<li>Нет блокировок: два одновременных update могут перезаписать сессию.</li>
+<li>Нет миграций: при изменении структуры старые сессии нужно обрабатывать вручную.</li>
+</ul>
+
+				<div class="pager">
+				<a href="context.html"><small>Назад</small>Context</a>
+				<a class="next" href="keyboard.html"><small>Дальше</small>Keyboard</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#подключение">Подключение</a>
+<a class="h2" href="#использование">Использование</a>
+<a class="h2" href="#in-memory">In-memory</a>
+<a class="h2" href="#redis">Redis</a>
+<a class="h2" href="#что-хранить">Что хранить</a>
+<a class="h2" href="#очистка">Очистка</a>
+<a class="h2" href="#тесты">Тесты</a>
+<a class="h2" href="#ограничения">Ограничения</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

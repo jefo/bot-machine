@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Context — Bot Machine</title>
+	<meta name="description" content="AppContext (ctx) — всё, что нужно для обработки одного update: Telegram-клиент, сессия, параметры и методы ответа." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="flows.html">Flow и состояния</a>
+<a href="views.html">Views</a>
+<a href="commands.html">Commands и Queries</a>
+<a href="router.html">Router</a>
+<a href="context.html" class="active">Context</a>
+<a href="sessions.html">Sessions</a>
+<a href="keyboard.html">Keyboard</a>
+<a href="text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="../guides/callbacks.html">Callback-кнопки</a>
+<a href="../guides/text-input.html">Текстовый ввод</a>
+<a href="../guides/appointment.html">Форма записи</a>
+<a href="../guides/errors.html">Ошибки и валидация</a>
+<a href="../guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="context">Context</h1>
+<p><code>AppContext</code> (<code>ctx</code>) — всё, что нужно для обработки одного update: Telegram-клиент, сессия, параметры и методы ответа.</p>
+<p>Новый контекст создаётся на каждый update и передаётся в middleware, обработчики, команды и запросы.</p>
+<h2 id="свойства">Свойства</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Поле</th>
+<th>Тип</th>
+<th>Что это</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ctx.update</code></td>
+<td><code>Update</code></td>
+<td>Сырой update от Telegram</td>
+</tr>
+<tr>
+<td><code>ctx.client</code></td>
+<td><code>TelegramClient</code></td>
+<td>Клиент Bot API</td>
+</tr>
+<tr>
+<td><code>ctx.logger</code></td>
+<td><code>ILogger</code></td>
+<td>Логгер</td>
+</tr>
+<tr>
+<td><code>ctx.router</code></td>
+<td><code>Router</code></td>
+<td>Роутер</td>
+</tr>
+<tr>
+<td><code>ctx.from</code></td>
+<td><code>User | undefined</code></td>
+<td>Автор сообщения или нажатия</td>
+</tr>
+<tr>
+<td><code>ctx.chat</code></td>
+<td><code>Chat | undefined</code></td>
+<td>Чат</td>
+</tr>
+<tr>
+<td><code>ctx.session</code></td>
+<td><code>Record&lt;string, any&gt;</code></td>
+<td>Данные пользователя между update</td>
+</tr>
+<tr>
+<td><code>ctx.state</code></td>
+<td><code>Record&lt;string, any&gt;</code></td>
+<td>Данные в рамках одного update</td>
+</tr>
+<tr>
+<td><code>ctx.params</code></td>
+<td><code>Record&lt;string, string&gt;</code></td>
+<td>Параметры маршрута</td>
+</tr>
+</tbody></table></div>
+<h2 id="методы">Методы</h2>
+<h3 id="reply">reply</h3>
+<p>Отправляет новое сообщение.</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Привет&quot;</span>);
+<span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;&lt;b&gt;Жирный&lt;/b&gt;&quot;</span>, { <span class="hljs-attr">parse_mode</span>: <span class="hljs-string">&quot;HTML&quot;</span> });
+</code></pre><h3 id="editmessagetext">editMessageText</h3>
+<p>Редактирует сообщение, на котором нажали кнопку.</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">editMessageText</span>(<span class="hljs-string">&quot;Новый текст&quot;</span>);
+</code></pre><p>Если update не содержит сообщения (например, обычный текст), метод бросит ошибку. Используйте его в <code>onCallbackQuery</code> или в flow, который обрабатывает callback.</p>
+<h3 id="answercallbackquery">answerCallbackQuery</h3>
+<p>Убирает «часики» на кнопке. Вызывайте после обработки callback.</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">answerCallbackQuery</span>();
+<span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">answerCallbackQuery</span>(<span class="hljs-string">&quot;Готово&quot;</span>);
+</code></pre><h3 id="deletemessage">deleteMessage</h3>
+<p>Удаляет сообщение, связанное с update.</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">deleteMessage</span>();
+</code></pre><h3 id="enterflow">enterFlow</h3>
+<p>Входит в flow и сразу рисует стартовый экран.</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">enterFlow</span>(<span class="hljs-string">&quot;appointment&quot;</span>);
+<span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">enterFlow</span>(<span class="hljs-string">&quot;appointment&quot;</span>, <span class="hljs-string">&quot;service&quot;</span>);
+</code></pre><p>По умолчанию стартовое состояние — <code>index</code>.</p>
+<h2 id="пример">Пример</h2>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">onCallbackQuery</span>(<span class="hljs-string">&quot;profile::id&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">answerCallbackQuery</span>();
+  <span class="hljs-keyword">const</span> profile = <span class="hljs-keyword">await</span> <span class="hljs-title function_">getProfile</span>(ctx.<span class="hljs-property">params</span>.<span class="hljs-property">id</span>);
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">editMessageText</span>(<span class="hljs-string">`Имя: <span class="hljs-subst">${profile.name}</span>`</span>);
+});
+</code></pre><h2 id="контекст-и-сессия">Контекст и сессия</h2>
+<p><code>ctx.session</code> живёт между update. <code>ctx.state</code> — только на один запрос.</p>
+<pre><code class="hljs language-ts">ctx.<span class="hljs-property">state</span>.<span class="hljs-property">requestStartedAt</span> = <span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>(); <span class="hljs-comment">// не сохранится</span>
+ctx.<span class="hljs-property">session</span>.<span class="hljs-property">lastSeen</span> = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>().<span class="hljs-title function_">toISOString</span>(); <span class="hljs-comment">// сохранится</span>
+</code></pre><p>Для сессии нужен middleware <code>session()</code>. Без него <code>ctx.session</code> — пустой объект, который не сохраняется.</p>
+
+				<div class="pager">
+				<a href="router.html"><small>Назад</small>Router</a>
+				<a class="next" href="sessions.html"><small>Дальше</small>Sessions</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#свойства">Свойства</a>
+<a class="h2" href="#методы">Методы</a>
+<a class="h3" href="#reply">reply</a>
+<a class="h3" href="#editmessagetext">editMessageText</a>
+<a class="h3" href="#answercallbackquery">answerCallbackQuery</a>
+<a class="h3" href="#deletemessage">deleteMessage</a>
+<a class="h3" href="#enterflow">enterFlow</a>
+<a class="h2" href="#пример">Пример</a>
+<a class="h2" href="#контекст-и-сессия">Контекст и сессия</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

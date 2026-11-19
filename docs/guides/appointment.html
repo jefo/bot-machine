@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Форма записи — Bot Machine</title>
+	<meta name="description" content="Полный сценарий: старт → услуга → имя → телефон → подтверждение → готово. Он есть в examples/appointment.ts и запускается без Telegram." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="../concepts/flows.html">Flow и состояния</a>
+<a href="../concepts/views.html">Views</a>
+<a href="../concepts/commands.html">Commands и Queries</a>
+<a href="../concepts/router.html">Router</a>
+<a href="../concepts/context.html">Context</a>
+<a href="../concepts/sessions.html">Sessions</a>
+<a href="../concepts/keyboard.html">Keyboard</a>
+<a href="../concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="callbacks.html">Callback-кнопки</a>
+<a href="text-input.html">Текстовый ввод</a>
+<a href="appointment.html" class="active">Форма записи</a>
+<a href="errors.html">Ошибки и валидация</a>
+<a href="testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="форма-записи">Форма записи</h1>
+<p>Полный сценарий: старт → услуга → имя → телефон → подтверждение → готово. Он есть в <code>examples/appointment.ts</code> и запускается без Telegram.</p>
+<h2 id="состояния">Состояния</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Состояние</th>
+<th>Что показывает</th>
+<th>Что собирает</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>index</code></td>
+<td>старт, «Записаться» / «Не сейчас»</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>service</code></td>
+<td>выбор услуги</td>
+<td><code>service</code></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>вопрос об имени</td>
+<td><code>name</code></td>
+</tr>
+<tr>
+<td><code>phone</code></td>
+<td>вопрос о телефоне</td>
+<td><code>phone</code></td>
+</tr>
+<tr>
+<td><code>confirm</code></td>
+<td>сводка и кнопки</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>done</code></td>
+<td>подтверждение</td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h2 id="flow">Flow</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { z } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;zod&quot;</span>;
+<span class="hljs-keyword">import</span> {
+  createFlow,
+  createCommand,
+  createQuery,
+  <span class="hljs-title class_">Keyboard</span>
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> appointmentFlow = <span class="hljs-title function_">createFlow</span>(<span class="hljs-string">&quot;appointment&quot;</span>, {
+  <span class="hljs-attr">index</span>: {
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({
+      <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Запись на приём\n\nВыберите услугу или отмените запись.&quot;</span>,
+      <span class="hljs-attr">reply_markup</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Записаться&quot;</span>, <span class="hljs-string">&quot;book&quot;</span>)
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Не сейчас&quot;</span>, <span class="hljs-string">&quot;cancel&quot;</span>)
+        .<span class="hljs-title function_">inline</span>()
+    }),
+    <span class="hljs-attr">onAction</span>: {
+      <span class="hljs-attr">book</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;startBooking&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> () =&gt; {}
+        }),
+        <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;service&quot;</span>
+      },
+      <span class="hljs-attr">cancel</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;cancel&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> () =&gt; {}
+        })
+        <span class="hljs-comment">// nextState не указан — flow завершится</span>
+      }
+    }
+  },
+
+  <span class="hljs-attr">service</span>: {
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({
+      <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Шаг 1 из 3. Выберите услугу:&quot;</span>,
+      <span class="hljs-attr">reply_markup</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Консультация&quot;</span>, <span class="hljs-string">&quot;service_consult&quot;</span>)
+        .<span class="hljs-title function_">row</span>()
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Диагностика&quot;</span>, <span class="hljs-string">&quot;service_diag&quot;</span>)
+        .<span class="hljs-title function_">row</span>()
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Лечение&quot;</span>, <span class="hljs-string">&quot;service_treat&quot;</span>)
+        .<span class="hljs-title function_">inline</span>()
+    }),
+    <span class="hljs-attr">onAction</span>: {
+      <span class="hljs-attr">service_consult</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;selectConsult&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; {
+            ctx.<span class="hljs-property">session</span>.<span class="hljs-property">service</span> = <span class="hljs-string">&quot;Консультация&quot;</span>;
+          }
+        }),
+        <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;name&quot;</span>
+      }
+      <span class="hljs-comment">// ...</span>
+    }
+  },
+
+  <span class="hljs-attr">name</span>: {
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({
+      <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Шаг 2 из 3. Как вас зовут?\n\nНапишите имя одним сообщением.&quot;</span>
+    }),
+    <span class="hljs-attr">onText</span>: {
+      <span class="hljs-string">&quot;:name&quot;</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;saveName&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">name</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">min</span>(<span class="hljs-number">1</span>) }),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ name }, ctx) =&gt; {
+            ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> = name;
+          }
+        }),
+        <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;phone&quot;</span>
+      }
+    }
+  },
+
+  <span class="hljs-attr">phone</span>: {
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({
+      <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Шаг 3 из 3. Телефон для связи?\n\nНапишите номер одним сообщением.&quot;</span>
+    }),
+    <span class="hljs-attr">onText</span>: {
+      <span class="hljs-string">&quot;:phone&quot;</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;savePhone&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">phone</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">min</span>(<span class="hljs-number">5</span>) }),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ phone }, ctx) =&gt; {
+            ctx.<span class="hljs-property">session</span>.<span class="hljs-property">phone</span> = phone;
+          }
+        }),
+        <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;confirm&quot;</span>
+      }
+    }
+  },
+
+  <span class="hljs-attr">confirm</span>: {
+    <span class="hljs-attr">onEnter</span>: <span class="hljs-title function_">createQuery</span>({
+      <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;bookingSummary&quot;</span>,
+      <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; ({
+        <span class="hljs-attr">service</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">service</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>,
+        <span class="hljs-attr">name</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>,
+        <span class="hljs-attr">phone</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">phone</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>
+      })
+    }),
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> (<span class="hljs-attr">props</span>: {
+      <span class="hljs-attr">service</span>: <span class="hljs-built_in">string</span>;
+      <span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span>;
+      <span class="hljs-attr">phone</span>: <span class="hljs-built_in">string</span>;
+    }) =&gt; ({
+      <span class="hljs-attr">text</span>: <span class="hljs-string">`Проверьте запись.\n\nУслуга: <span class="hljs-subst">${props.service}</span>\nИмя: <span class="hljs-subst">${props.name}</span>\nТелефон: <span class="hljs-subst">${props.phone}</span>`</span>,
+      <span class="hljs-attr">reply_markup</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Подтвердить&quot;</span>, <span class="hljs-string">&quot;confirm&quot;</span>)
+        .<span class="hljs-title function_">row</span>()
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Отменить&quot;</span>, <span class="hljs-string">&quot;cancel&quot;</span>)
+        .<span class="hljs-title function_">inline</span>()
+    }),
+    <span class="hljs-attr">onAction</span>: {
+      <span class="hljs-attr">confirm</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;confirmBooking&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> () =&gt; {}
+        }),
+        <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;done&quot;</span>
+      },
+      <span class="hljs-attr">cancel</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;cancelBooking&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> () =&gt; {}
+        })
+      }
+    }
+  },
+
+  <span class="hljs-attr">done</span>: {
+    <span class="hljs-attr">onEnter</span>: <span class="hljs-title function_">createQuery</span>({
+      <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;bookingReceipt&quot;</span>,
+      <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; ({
+        <span class="hljs-attr">service</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">service</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>,
+        <span class="hljs-attr">name</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>,
+        <span class="hljs-attr">phone</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">phone</span> <span class="hljs-keyword">as</span> <span class="hljs-built_in">string</span>
+      })
+    }),
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> (<span class="hljs-attr">props</span>: {
+      <span class="hljs-attr">service</span>: <span class="hljs-built_in">string</span>;
+      <span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span>;
+      <span class="hljs-attr">phone</span>: <span class="hljs-built_in">string</span>;
+    }) =&gt; ({
+      <span class="hljs-attr">text</span>: <span class="hljs-string">`Готово.\n\n<span class="hljs-subst">${props.name}</span>, вы записаны на «<span class="hljs-subst">${props.service}</span>».\nПозвоним на <span class="hljs-subst">${props.phone}</span>.`</span>
+    })
+  }
+});
+</code></pre><h2 id="подключение">Подключение</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Router</span>, <span class="hljs-title class_">FlowController</span>, session } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>();
+router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">session</span>());
+router.<span class="hljs-title function_">addFlow</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">FlowController</span>(appointmentFlow.<span class="hljs-property">config</span>, appointmentFlow.<span class="hljs-property">name</span>));
+
+router.<span class="hljs-title function_">onCommand</span>(<span class="hljs-string">&quot;start&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">enterFlow</span>(appointmentFlow.<span class="hljs-property">name</span>);
+});
+</code></pre><h2 id="демо">Демо</h2>
+<pre><code class="hljs language-bash">bun run demo
+</code></pre><p>Вывод:</p>
+<pre><code class="hljs language-text">Вы: /start
+Бот: Запись на приём
+     [ Записаться ] [ Не сейчас ]
+
+Вы: Записаться
+Бот: Шаг 1 из 3. Выберите услугу:
+     [ Консультация ] [ Диагностика ] [ Лечение ]
+
+...
+
+Бот: Готово.
+     Иван, вы записаны на «Консультация».
+     Позвоним на +7 999 123-45-67.
+</code></pre><h2 id="что-добавить">Что добавить</h2>
+<ul>
+<li>проверку телефона через <code>z.string().regex(...)</code>;</li>
+<li>кнопку «Назад» на каждом шаге;</li>
+<li>запись в БД в <code>confirmBooking</code>;</li>
+<li>уведомление менеджеру после <code>done</code>;</li>
+<li>отмену и очистку сессии.</li>
+</ul>
+<h2 id="тест">Тест</h2>
+<p>Сценарий проверяется без Telegram: создайте фейковый <code>AppContext</code>, установите <code>flowName</code>/<code>flowState</code> и вызывайте <code>FlowController.handle</code>. Пример — в <code>examples/appointment.test.ts</code>.</p>
+
+				<div class="pager">
+				<a href="text-input.html"><small>Назад</small>Текстовый ввод</a>
+				<a class="next" href="errors.html"><small>Дальше</small>Ошибки и валидация</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#состояния">Состояния</a>
+<a class="h2" href="#flow">Flow</a>
+<a class="h2" href="#подключение">Подключение</a>
+<a class="h2" href="#демо">Демо</a>
+<a class="h2" href="#что-добавить">Что добавить</a>
+<a class="h2" href="#тест">Тест</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

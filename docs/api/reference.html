@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Справочник — Bot Machine</title>
+	<meta name="description" content="Версия: 0.1.11. Импорт:" />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="../concepts/flows.html">Flow и состояния</a>
+<a href="../concepts/views.html">Views</a>
+<a href="../concepts/commands.html">Commands и Queries</a>
+<a href="../concepts/router.html">Router</a>
+<a href="../concepts/context.html">Context</a>
+<a href="../concepts/sessions.html">Sessions</a>
+<a href="../concepts/keyboard.html">Keyboard</a>
+<a href="../concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="../guides/callbacks.html">Callback-кнопки</a>
+<a href="../guides/text-input.html">Текстовый ввод</a>
+<a href="../guides/appointment.html">Форма записи</a>
+<a href="../guides/errors.html">Ошибки и валидация</a>
+<a href="../guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="reference.html" class="active">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="справочник-api">Справочник API</h1>
+<p>Версия: <strong>0.1.11</strong>. Импорт:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">Router</span>,
+  <span class="hljs-title class_">FlowController</span>,
+  createFlow,
+  createCommand,
+  createQuery,
+  session,
+  <span class="hljs-title class_">RedisSessionStore</span>,
+  <span class="hljs-title class_">Keyboard</span>,
+  format,
+  createLogger
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+</code></pre><p><code>TelegramClient</code> импортируется отдельно:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">TelegramClient</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-client&quot;</span>;
+</code></pre><h2 id="createflow">createFlow</h2>
+<pre><code class="hljs language-ts"><span class="hljs-title function_">createFlow</span>(<span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">config</span>: <span class="hljs-title class_">FlowConfig</span>): <span class="hljs-title class_">FlowDefinition</span>
+</code></pre><p>Создаёт type-safe определение flow.</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> flow = <span class="hljs-title function_">createFlow</span>(<span class="hljs-string">&quot;appointment&quot;</span>, {
+  <span class="hljs-attr">index</span>: { <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({ <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Старт&quot;</span> }) }
+});
+
+flow.<span class="hljs-property">name</span>;    <span class="hljs-comment">// &quot;appointment&quot;</span>
+flow.<span class="hljs-property">config</span>;  <span class="hljs-comment">// объект состояний</span>
+flow.<span class="hljs-property">states</span>;  <span class="hljs-comment">// { index: &quot;index&quot; }</span>
+</code></pre><h2 id="flowcontroller">FlowController</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">new</span> <span class="hljs-title class_">FlowController</span>(<span class="hljs-attr">config</span>: <span class="hljs-title class_">FlowConfig</span>, <span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span>)
+</code></pre><div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Метод</th>
+<th>Описание</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>handle(ctx): Promise&lt;boolean&gt;</code></td>
+<td>обработать update, если пользователь в этом flow</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>имя flow</td>
+</tr>
+</tbody></table></div>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> controller = <span class="hljs-keyword">new</span> <span class="hljs-title class_">FlowController</span>(flow.<span class="hljs-property">config</span>, flow.<span class="hljs-property">name</span>);
+router.<span class="hljs-title function_">addFlow</span>(controller);
+</code></pre><h2 id="flowstate">FlowState</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">FlowState</span> {
+  <span class="hljs-attr">component</span>: <span class="hljs-title class_">Component</span>;
+  <span class="hljs-attr">onEnter</span>?: <span class="hljs-title class_">BotQuery</span>;
+  <span class="hljs-attr">onAction</span>?: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-title class_">ActionHandler</span>&gt;;
+  <span class="hljs-attr">onText</span>?: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-title class_">ActionHandler</span>&gt;;
+}
+</code></pre><p><code>component</code> обязателен. Остальные поля опциональны.</p>
+<h2 id="actionhandler">ActionHandler</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">ActionHandler</span> {
+  <span class="hljs-attr">command</span>: <span class="hljs-title class_">BotCommand</span>;
+  <span class="hljs-attr">nextState</span>?: <span class="hljs-built_in">string</span> | (<span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">result</span>: <span class="hljs-built_in">any</span></span>) =&gt;</span> <span class="hljs-built_in">string</span>);
+  <span class="hljs-attr">refresh</span>?: <span class="hljs-built_in">boolean</span>;
+}
+</code></pre><ul>
+<li><code>nextState</code> — переход.</li>
+<li><code>refresh: true</code> — перерисовать текущее состояние.</li>
+<li>Если нет ни <code>nextState</code>, ни <code>refresh</code> — выйти из flow.</li>
+</ul>
+<h2 id="createcommand">createCommand</h2>
+<pre><code class="hljs language-ts"><span class="hljs-title function_">createCommand</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span>,
+  <span class="hljs-attr">input</span>?: <span class="hljs-title class_">ZodType</span>,
+  <span class="hljs-attr">output</span>?: <span class="hljs-title class_">ZodType</span>,
+  <span class="hljs-attr">execute</span>: <span class="hljs-function">(<span class="hljs-params">input, ctx</span>) =&gt;</span> <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">TOutput</span>&gt;
+}): <span class="hljs-title class_">BotCommand</span>
+</code></pre><pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> saveName = <span class="hljs-title function_">createCommand</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;saveName&quot;</span>,
+  <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">name</span>: z.<span class="hljs-title function_">string</span>() }),
+  <span class="hljs-attr">output</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">saved</span>: z.<span class="hljs-title function_">boolean</span>() }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ name }, ctx) =&gt; {
+    ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> = name;
+    <span class="hljs-keyword">return</span> { <span class="hljs-attr">saved</span>: <span class="hljs-literal">true</span> };
+  }
+});
+</code></pre><p><code>input</code> по умолчанию <code>z.void()</code>. <code>output</code> по умолчанию <code>z.any()</code>; если задан, результат проверяется.</p>
+<h2 id="createquery">createQuery</h2>
+<pre><code class="hljs language-ts"><span class="hljs-title function_">createQuery</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-built_in">string</span>,
+  <span class="hljs-attr">input</span>?: <span class="hljs-title class_">ZodType</span>,
+  <span class="hljs-attr">output</span>?: <span class="hljs-title class_">ZodType</span>,
+  <span class="hljs-attr">execute</span>: <span class="hljs-function">(<span class="hljs-params">input, ctx</span>) =&gt;</span> <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">TOutput</span>&gt;
+}): <span class="hljs-title class_">BotQuery</span>
+</code></pre><pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> getCount = <span class="hljs-title function_">createQuery</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;getCount&quot;</span>,
+  <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">void</span>(),
+  <span class="hljs-attr">output</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">count</span>: z.<span class="hljs-title function_">number</span>() }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; ({ <span class="hljs-attr">count</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">count</span> ?? <span class="hljs-number">0</span> })
+});
+</code></pre><h2 id="router">Router</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>(<span class="hljs-attr">options</span>?: { <span class="hljs-attr">logger</span>?: <span class="hljs-title class_">ILogger</span> })
+</code></pre><div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Метод</th>
+<th>Описание</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>onCommand(pattern, handler)</code></td>
+<td><code>/start</code>, <code>/start@bot</code>, RegExp</td>
+</tr>
+<tr>
+<td><code>onCallbackQuery(pattern, handler)</code></td>
+<td>callback data, <code>::id</code></td>
+</tr>
+<tr>
+<td><code>onText(pattern, handler)</code></td>
+<td>текст, <code>:name</code></td>
+</tr>
+<tr>
+<td><code>addFlow(controller)</code></td>
+<td>зарегистрировать flow</td>
+</tr>
+<tr>
+<td><code>use(middleware)</code></td>
+<td>middleware</td>
+</tr>
+<tr>
+<td><code>fallback(handler)</code></td>
+<td>обработчик без совпадений</td>
+</tr>
+<tr>
+<td><code>handle(update, client)</code></td>
+<td>точка входа из polling</td>
+</tr>
+<tr>
+<td><code>route(ctx)</code></td>
+<td>маршрутизация готового контекста</td>
+</tr>
+</tbody></table></div>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">onCommand</span>(<span class="hljs-string">&quot;start&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Привет&quot;</span>);
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">enterFlow</span>(<span class="hljs-string">&quot;welcome&quot;</span>);
+});
+</code></pre><h2 id="session">session</h2>
+<pre><code class="hljs language-ts"><span class="hljs-title function_">session</span>(<span class="hljs-attr">options</span>?: { <span class="hljs-attr">store</span>?: <span class="hljs-title class_">ISessionStore</span> }): <span class="hljs-title class_">Middleware</span>
+</code></pre><pre><code class="hljs language-ts">router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">session</span>());
+</code></pre><p>По умолчанию in-memory. Для Redis:</p>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">session</span>({ <span class="hljs-attr">store</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisSessionStore</span>(redis) }));
+</code></pre><h2 id="redissessionstore">RedisSessionStore</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisSessionStore</span>(<span class="hljs-attr">client</span>: <span class="hljs-title class_">RedisClientType</span>, <span class="hljs-attr">options</span>?: { <span class="hljs-attr">prefix</span>?: <span class="hljs-built_in">string</span> })
+</code></pre><pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> store = <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisSessionStore</span>(redis, { <span class="hljs-attr">prefix</span>: <span class="hljs-string">&quot;bot:session&quot;</span> });
+</code></pre><h2 id="keyboard">Keyboard</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> keyboard = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Да&quot;</span>, <span class="hljs-string">&quot;confirm&quot;</span>)
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Нет&quot;</span>, <span class="hljs-string">&quot;cancel&quot;</span>)
+  .<span class="hljs-title function_">row</span>()
+  .<span class="hljs-title function_">url</span>(<span class="hljs-string">&quot;Сайт&quot;</span>, <span class="hljs-string">&quot;https://example.com&quot;</span>);
+</code></pre><div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Метод</th>
+<th>Описание</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>text(label, callbackData)</code></td>
+<td>callback-кнопка</td>
+</tr>
+<tr>
+<td><code>url(label, url)</code></td>
+<td>ссылка</td>
+</tr>
+<tr>
+<td><code>login(label, loginUrl)</code></td>
+<td>Telegram Login</td>
+</tr>
+<tr>
+<td><code>switchInline(label, query)</code></td>
+<td>inline-режим</td>
+</tr>
+<tr>
+<td><code>webApp(label, info)</code></td>
+<td>Web App</td>
+</tr>
+<tr>
+<td><code>pay(label)</code></td>
+<td>оплата</td>
+</tr>
+<tr>
+<td><code>requestContact(label)</code></td>
+<td>контакт</td>
+</tr>
+<tr>
+<td><code>requestLocation(label)</code></td>
+<td>геолокация</td>
+</tr>
+<tr>
+<td><code>requestPoll(label, type?)</code></td>
+<td>опрос</td>
+</tr>
+<tr>
+<td><code>row()</code></td>
+<td>новый ряд</td>
+</tr>
+<tr>
+<td><code>inline()</code></td>
+<td><code>InlineKeyboardMarkup</code></td>
+</tr>
+<tr>
+<td><code>reply(options?)</code></td>
+<td><code>ReplyKeyboardMarkup</code></td>
+</tr>
+<tr>
+<td><code>static remove()</code></td>
+<td>убрать reply-клавиатуру</td>
+</tr>
+</tbody></table></div>
+<h2 id="format">format</h2>
+<pre><code class="hljs language-ts"><span class="hljs-title function_">format</span>(<span class="hljs-function">(<span class="hljs-params">tools</span>) =&gt;</span> <span class="hljs-title class_">Fragment</span>): <span class="hljs-title class_">FormattedText</span>
+</code></pre><p>Инструменты: <code>b</code>, <code>i</code>, <code>u</code>, <code>s</code>, <code>sp</code>, <code>c</code>, <code>l</code>, <code>p</code>, <code>n</code>, символы (<code>check</code>, <code>cross</code>, <code>bullet</code>, <code>arrow</code>, <code>rocket</code> и др.).</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> text = <span class="hljs-title function_">format</span>(<span class="hljs-function">(<span class="hljs-params">{ b, c, n }</span>) =&gt;</span> [<span class="hljs-title function_">b</span>(<span class="hljs-string">&quot;Итого:&quot;</span>), <span class="hljs-string">&quot; &quot;</span>, <span class="hljs-title function_">c</span>(<span class="hljs-string">&quot;1000 ₽&quot;</span>), <span class="hljs-title function_">n</span>()]);
+<span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(text.<span class="hljs-property">text</span>, { <span class="hljs-attr">parse_mode</span>: text.<span class="hljs-property">parseMode</span> });
+</code></pre><h2 id="appcontext">AppContext</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Поле</th>
+<th>Тип</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>update</code></td>
+<td><code>Update</code></td>
+</tr>
+<tr>
+<td><code>client</code></td>
+<td><code>TelegramClient</code></td>
+</tr>
+<tr>
+<td><code>logger</code></td>
+<td><code>ILogger</code></td>
+</tr>
+<tr>
+<td><code>router</code></td>
+<td><code>Router</code></td>
+</tr>
+<tr>
+<td><code>from</code></td>
+<td><code>User | undefined</code></td>
+</tr>
+<tr>
+<td><code>chat</code></td>
+<td><code>Chat | undefined</code></td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td><code>Record&lt;string, any&gt;</code></td>
+</tr>
+<tr>
+<td><code>state</code></td>
+<td><code>Record&lt;string, any&gt;</code></td>
+</tr>
+<tr>
+<td><code>params</code></td>
+<td><code>Record&lt;string, string&gt;</code></td>
+</tr>
+</tbody></table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Метод</th>
+<th>Описание</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>reply(text, extra?)</code></td>
+<td>отправить сообщение</td>
+</tr>
+<tr>
+<td><code>editMessageText(text, extra?)</code></td>
+<td>редактировать сообщение</td>
+</tr>
+<tr>
+<td><code>deleteMessage()</code></td>
+<td>удалить сообщение</td>
+</tr>
+<tr>
+<td><code>answerCallbackQuery(text?)</code></td>
+<td>ответить на callback</td>
+</tr>
+<tr>
+<td><code>enterFlow(name, initialState?)</code></td>
+<td>войти в flow</td>
+</tr>
+</tbody></table></div>
+<h2 id="messagepayload">MessagePayload</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">MessagePayload</span> {
+  <span class="hljs-attr">text</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">parse_mode</span>?: <span class="hljs-string">&quot;HTML&quot;</span> | <span class="hljs-string">&quot;MarkdownV2&quot;</span>;
+  <span class="hljs-attr">reply_markup</span>?: {
+    <span class="hljs-attr">inline_keyboard</span>: <span class="hljs-title class_">InlineKeyboardButton</span>[][];
+  };
+}
+</code></pre><h2 id="isessionstore">ISessionStore</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">ISessionStore</span> {
+  <span class="hljs-title function_">get</span>(<span class="hljs-attr">key</span>: <span class="hljs-built_in">string</span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">any</span>&gt; | <span class="hljs-literal">undefined</span>&gt;;
+  <span class="hljs-title function_">set</span>(<span class="hljs-attr">key</span>: <span class="hljs-built_in">string</span>, <span class="hljs-attr">value</span>: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">any</span>&gt;): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-built_in">void</span>&gt;;
+  <span class="hljs-title function_">delete</span>(<span class="hljs-attr">key</span>: <span class="hljs-built_in">string</span>): <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-built_in">void</span>&gt;;
+}
+</code></pre><h2 id="createlogger">createLogger</h2>
+<pre><code class="hljs language-ts"><span class="hljs-title function_">createLogger</span>(<span class="hljs-attr">options</span>?: pino.<span class="hljs-property">LoggerOptions</span>): <span class="hljs-title class_">ILogger</span>
+</code></pre><pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> logger = <span class="hljs-title function_">createLogger</span>();
+<span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>({ logger });
+</code></pre><h2 id="экспорты">Экспорты</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Экспорт</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Router</code></td>
+<td>маршрутизация update</td>
+</tr>
+<tr>
+<td><code>FlowController</code></td>
+<td>исполнение flow</td>
+</tr>
+<tr>
+<td><code>createFlow</code></td>
+<td>определение flow</td>
+</tr>
+<tr>
+<td><code>createCommand</code></td>
+<td>бизнес-команда</td>
+</tr>
+<tr>
+<td><code>createQuery</code></td>
+<td>запрос данных</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>middleware сессии</td>
+</tr>
+<tr>
+<td><code>RedisSessionStore</code></td>
+<td>Redis-хранилище</td>
+</tr>
+<tr>
+<td><code>Keyboard</code></td>
+<td>клавиатуры</td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td>HTML-форматирование</td>
+</tr>
+<tr>
+<td><code>createLogger</code></td>
+<td>pino-логгер</td>
+</tr>
+<tr>
+<td><code>UI-kit</code></td>
+<td>готовые сообщения</td>
+</tr>
+</tbody></table></div>
+
+				<div class="pager">
+				<a href="../guides/testing.html"><small>Назад</small>Тесты</a>
+				<a class="next" href="../architecture.html"><small>Дальше</small>Архитектура</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#createflow">createFlow</a>
+<a class="h2" href="#flowcontroller">FlowController</a>
+<a class="h2" href="#flowstate">FlowState</a>
+<a class="h2" href="#actionhandler">ActionHandler</a>
+<a class="h2" href="#createcommand">createCommand</a>
+<a class="h2" href="#createquery">createQuery</a>
+<a class="h2" href="#router">Router</a>
+<a class="h2" href="#session">session</a>
+<a class="h2" href="#redissessionstore">RedisSessionStore</a>
+<a class="h2" href="#keyboard">Keyboard</a>
+<a class="h2" href="#format">format</a>
+<a class="h2" href="#appcontext">AppContext</a>
+<a class="h2" href="#messagepayload">MessagePayload</a>
+<a class="h2" href="#isessionstore">ISessionStore</a>
+<a class="h2" href="#createlogger">createLogger</a>
+<a class="h2" href="#экспорты">Экспорты</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

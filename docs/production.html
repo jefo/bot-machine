@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Production — Bot Machine</title>
+	<meta name="description" content="Чек-лист для бота, который работает не только на ноутбуке." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="index.html">Обзор</a>
+<a href="getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="concepts/flows.html">Flow и состояния</a>
+<a href="concepts/views.html">Views</a>
+<a href="concepts/commands.html">Commands и Queries</a>
+<a href="concepts/router.html">Router</a>
+<a href="concepts/context.html">Context</a>
+<a href="concepts/sessions.html">Sessions</a>
+<a href="concepts/keyboard.html">Keyboard</a>
+<a href="concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="guides/callbacks.html">Callback-кнопки</a>
+<a href="guides/text-input.html">Текстовый ввод</a>
+<a href="guides/appointment.html">Форма записи</a>
+<a href="guides/errors.html">Ошибки и валидация</a>
+<a href="guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="architecture.html">Архитектура</a>
+<a href="production.html" class="active">Production</a>
+<a href="limits.html">Ограничения</a>
+<a href="faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="production">Production</h1>
+<p>Чек-лист для бота, который работает не только на ноутбуке.</p>
+<h2 id="1-сессии">1. Сессии</h2>
+<p>По умолчанию сессии живут в памяти процесса. Для production подключите Redis:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { createClient } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;redis&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">RedisSessionStore</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> redis = <span class="hljs-title function_">createClient</span>({ <span class="hljs-attr">url</span>: process.<span class="hljs-property">env</span>.<span class="hljs-property">REDIS_URL</span> });
+<span class="hljs-keyword">await</span> redis.<span class="hljs-title function_">connect</span>();
+
+router.<span class="hljs-title function_">use</span>(
+  <span class="hljs-title function_">session</span>({
+    <span class="hljs-attr">store</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">RedisSessionStore</span>(redis, { <span class="hljs-attr">prefix</span>: <span class="hljs-string">&quot;bot:session&quot;</span> })
+  })
+);
+</code></pre><p>Проверьте:</p>
+<ul>
+<li>TTL или регулярную очистку старых ключей;</li>
+<li>сериализацию: в сессии только JSON-данные;</li>
+<li>размер сессии: не храните истории диалогов целиком.</li>
+</ul>
+<h2 id="2-логирование">2. Логирование</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { createLogger } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> logger = <span class="hljs-title function_">createLogger</span>();
+<span class="hljs-keyword">const</span> router = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Router</span>({ logger });
+router.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">loggingMiddleware</span>());
+</code></pre><p>В production отключите <code>pino-pretty</code> (он для development) и пишите JSON в stdout.</p>
+<h2 id="3-ошибки">3. Ошибки</h2>
+<ul>
+<li>Логируйте ошибки с <code>update_id</code> и <code>user_id</code>.</li>
+<li>Не показывайте пользователю стектрейсы.</li>
+<li>Для ожидаемых ошибок возвращайте <code>{ ok: false, reason }</code>.</li>
+<li>Для неожиданных — fallback и алерт.</li>
+</ul>
+<h2 id="4-polling">4. Polling</h2>
+<p>В 0.1.11 используется long polling:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> client.<span class="hljs-title function_">startPolling</span>(<span class="hljs-function">(<span class="hljs-params">update</span>) =&gt;</span> router.<span class="hljs-title function_">handle</span>(update, client));
+</code></pre><ul>
+<li>Один процесс на токен. Второй polling-процесс начнёт конфликтовать.</li>
+<li>При деплое сначала останавливайте старый процесс, потом запускайте новый.</li>
+<li>Для нескольких инстансов нужен webhook или распределённая блокировка.</li>
+</ul>
+<h2 id="5-перезапуск">5. Перезапуск</h2>
+<ul>
+<li>Сессии в Redis переживают перезапуск.</li>
+<li>Активные flow продолжатся с <code>flowState</code>.</li>
+<li>Проверьте, что версия кода совместима со старыми состояниями.</li>
+</ul>
+<h2 id="6-деплой">6. Деплой</h2>
+<p>Bun-процесс под systemd, Docker или на платформе с поддержкой Bun:</p>
+<pre><code class="hljs language-bash">BOT_TOKEN=... REDIS_URL=... bun run start
+</code></pre><p>Переменные:</p>
+<pre><code class="hljs language-env">BOT_TOKEN=123456:AA...
+REDIS_URL=redis://localhost:6379
+NODE_ENV=production
+</code></pre><h2 id="7-мониторинг">7. Мониторинг</h2>
+<p>Минимум:</p>
+<ul>
+<li>процесс жив;</li>
+<li>polling не падает;</li>
+<li>ошибки в логах;</li>
+<li>задержка ответа;</li>
+<li>число активных сессий.</li>
+</ul>
+<h2 id="8-безопасность">8. Безопасность</h2>
+<ul>
+<li>Токен только в env, не в git.</li>
+<li>Не логируйте токен.</li>
+<li>Ограничьте доступ к Redis.</li>
+<li>Валидируйте всё, что приходит от пользователя.</li>
+<li>Не выполняйте команды из текста.</li>
+</ul>
+<h2 id="чек-лист">Чек-лист</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Redis подключён.</li>
+<li><input disabled="" type="checkbox"> Токен в env.</li>
+<li><input disabled="" type="checkbox"> Логи JSON.</li>
+<li><input disabled="" type="checkbox"> Fallback отвечает пользователю.</li>
+<li><input disabled="" type="checkbox"> Один polling-процесс.</li>
+<li><input disabled="" type="checkbox"> Есть healthcheck.</li>
+<li><input disabled="" type="checkbox"> Есть план перезапуска.</li>
+<li><input disabled="" type="checkbox"> Тесты проходят.</li>
+</ul>
+
+				<div class="pager">
+				<a href="architecture.html"><small>Назад</small>Архитектура</a>
+				<a class="next" href="limits.html"><small>Дальше</small>Ограничения</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#1-сессии">1. Сессии</a>
+<a class="h2" href="#2-логирование">2. Логирование</a>
+<a class="h2" href="#3-ошибки">3. Ошибки</a>
+<a class="h2" href="#4-polling">4. Polling</a>
+<a class="h2" href="#5-перезапуск">5. Перезапуск</a>
+<a class="h2" href="#6-деплой">6. Деплой</a>
+<a class="h2" href="#7-мониторинг">7. Мониторинг</a>
+<a class="h2" href="#8-безопасность">8. Безопасность</a>
+<a class="h2" href="#чек-лист">Чек-лист</a>
+		</aside>
+	</div>
+	<script src="assets/docs.js"></script>
+</body>
+</html>

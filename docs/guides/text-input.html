@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Текстовый ввод — Bot Machine</title>
+	<meta name="description" content="Текст в flow обрабатывается через onText. Паттерн может захватывать значение в ctx.params." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="../concepts/flows.html">Flow и состояния</a>
+<a href="../concepts/views.html">Views</a>
+<a href="../concepts/commands.html">Commands и Queries</a>
+<a href="../concepts/router.html">Router</a>
+<a href="../concepts/context.html">Context</a>
+<a href="../concepts/sessions.html">Sessions</a>
+<a href="../concepts/keyboard.html">Keyboard</a>
+<a href="../concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="callbacks.html">Callback-кнопки</a>
+<a href="text-input.html" class="active">Текстовый ввод</a>
+<a href="appointment.html">Форма записи</a>
+<a href="errors.html">Ошибки и валидация</a>
+<a href="testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="текстовый-ввод">Текстовый ввод</h1>
+<p>Текст в flow обрабатывается через <code>onText</code>. Паттерн может захватывать значение в <code>ctx.params</code>.</p>
+<h2 id="захват-значения">Захват значения</h2>
+<pre><code class="hljs language-ts"><span class="hljs-attr">name</span>: {
+  <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({
+    <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Как вас зовут?\n\nНапишите имя одним сообщением.&quot;</span>
+  }),
+  <span class="hljs-attr">onText</span>: {
+    <span class="hljs-string">&quot;:name&quot;</span>: {
+      <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+        <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;saveName&quot;</span>,
+        <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">name</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">min</span>(<span class="hljs-number">1</span>) }),
+        <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ name }, ctx) =&gt; {
+          ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> = name;
+        }
+      }),
+      <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;phone&quot;</span>
+    }
+  }
+}
+</code></pre><p>Пользователь пишет <code>Иван</code>:</p>
+<ul>
+<li>паттерн <code>:name</code> захватывает <code>&quot;Иван&quot;</code>;</li>
+<li><code>ctx.params.name = &quot;Иван&quot;</code>;</li>
+<li>команда получает <code>{ name: &quot;Иван&quot;, text: &quot;Иван&quot; }</code>;</li>
+<li>flow переходит в <code>phone</code>.</li>
+</ul>
+<h2 id="несколько-параметров">Несколько параметров</h2>
+<pre><code class="hljs language-ts"><span class="hljs-attr">onText</span>: {
+  <span class="hljs-string">&quot;заказ :id :status&quot;</span>: {
+    <span class="hljs-attr">command</span>: updateStatusCommand,
+    <span class="hljs-attr">refresh</span>: <span class="hljs-literal">true</span>
+  }
+}
+</code></pre><p>Текст <code>заказ 42 paid</code> → <code>ctx.params = { id: &quot;42&quot;, status: &quot;paid&quot; }</code>.</p>
+<h2 id="точное-совпадение">Точное совпадение</h2>
+<pre><code class="hljs language-ts"><span class="hljs-attr">onText</span>: {
+  <span class="hljs-string">&quot;помощь&quot;</span>: {
+    <span class="hljs-attr">command</span>: helpCommand,
+    <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;help&quot;</span>
+  }
+}
+</code></pre><p>Совпадает только сообщение <code>помощь</code> целиком. Для подстроки используйте RegExp.</p>
+<h2 id="regexp">RegExp</h2>
+<pre><code class="hljs language-ts"><span class="hljs-attr">onText</span>: {
+  <span class="hljs-regexp">/^\+?\d{10,15}$/</span>: {
+    <span class="hljs-attr">command</span>: savePhoneCommand,
+    <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;confirm&quot;</span>
+  }
+}
+</code></pre><p>RegExp проверяется через <code>text.match()</code> — без якорей он найдёт подстроку.</p>
+<h2 id="валидация">Валидация</h2>
+<p>Zod-схема — единственное место, где описаны правила:</p>
+<pre><code class="hljs language-ts"><span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({
+  <span class="hljs-attr">phone</span>: z.<span class="hljs-title function_">string</span>().<span class="hljs-title function_">regex</span>(<span class="hljs-regexp">/^\+?\d{10,15}$/</span>, <span class="hljs-string">&quot;Некорректный номер&quot;</span>)
+})
+</code></pre><p>Если текст не прошёл, команда не выполнится, flow покажет ошибку. Для дружелюбного сообщения обработайте ошибку сами или используйте отдельное состояние.</p>
+<h2 id="текст-и-кнопки-в-одном-состоянии">Текст и кнопки в одном состоянии</h2>
+<pre><code class="hljs language-ts"><span class="hljs-attr">onText</span>: {...},
+<span class="hljs-attr">onAction</span>: {...}
+</code></pre><p>Сначала flow проверяет callback, потом текст. Можно принимать и кнопки, и свободный ввод.</p>
+<h2 id="когда-не-нужен-текст">Когда не нужен текст</h2>
+<p>Если значение можно выбрать кнопкой, выбирайте кнопку: меньше ошибок и не нужна валидация формата.</p>
+<p>Текст уместен для:</p>
+<ul>
+<li>имени;</li>
+<li>телефона;</li>
+<li>email;</li>
+<li>свободного описания задачи.</li>
+</ul>
+<h2 id="дальше">Дальше</h2>
+<ul>
+<li><a href="./appointment.html">Форма записи</a></li>
+<li><a href="./errors.html">Ошибки и валидация</a></li>
+</ul>
+
+				<div class="pager">
+				<a href="callbacks.html"><small>Назад</small>Callback-кнопки</a>
+				<a class="next" href="appointment.html"><small>Дальше</small>Форма записи</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#захват-значения">Захват значения</a>
+<a class="h2" href="#несколько-параметров">Несколько параметров</a>
+<a class="h2" href="#точное-совпадение">Точное совпадение</a>
+<a class="h2" href="#regexp">RegExp</a>
+<a class="h2" href="#валидация">Валидация</a>
+<a class="h2" href="#текст-и-кнопки-в-одном-состоянии">Текст и кнопки в одном состоянии</a>
+<a class="h2" href="#когда-не-нужен-текст">Когда не нужен текст</a>
+<a class="h2" href="#дальше">Дальше</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

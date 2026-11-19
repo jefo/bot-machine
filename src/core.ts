@@ -39,8 +39,9 @@ export function createQuery<
     );
     try {
       const result = await execute(parsedInput, ctx);
-      ctx.logger.info({ query: name, result }, `[Query] Success: ${name}`);
-      return result;
+      const parsedOutput = outputSchema.parse(result) as TOutput;
+      ctx.logger.info({ query: name, result: parsedOutput }, `[Query] Success: ${name}`);
+      return parsedOutput;
     } catch (error) {
       ctx.logger.error({ query: name, error }, `[Query] Failed: ${name}`);
       throw error;
@@ -94,8 +95,9 @@ export function createCommand<
     );
     try {
       const result = await execute(parsedInput, ctx);
-      ctx.logger.info({ command: name, result }, `[Command] Success: ${name}`);
-      return result;
+      const parsedOutput = outputSchema.parse(result) as TOutput;
+      ctx.logger.info({ command: name, result: parsedOutput }, `[Command] Success: ${name}`);
+      return parsedOutput;
     } catch (error) {
       ctx.logger.error({ command: name, error }, `[Command] Failed: ${name}`);
       throw error;

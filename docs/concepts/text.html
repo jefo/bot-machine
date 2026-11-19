@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Text — Bot Machine</title>
+	<meta name="description" content="format собирает HTML-сообщение из фрагментов и сам экранирует пользовательский текст. Не нужно вручную склеивать строки с &amp;lt;b&amp;gt;." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="flows.html">Flow и состояния</a>
+<a href="views.html">Views</a>
+<a href="commands.html">Commands и Queries</a>
+<a href="router.html">Router</a>
+<a href="context.html">Context</a>
+<a href="sessions.html">Sessions</a>
+<a href="keyboard.html">Keyboard</a>
+<a href="text.html" class="active">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="../guides/callbacks.html">Callback-кнопки</a>
+<a href="../guides/text-input.html">Текстовый ввод</a>
+<a href="../guides/appointment.html">Форма записи</a>
+<a href="../guides/errors.html">Ошибки и валидация</a>
+<a href="../guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="text">Text</h1>
+<p><code>format</code> собирает HTML-сообщение из фрагментов и сам экранирует пользовательский текст. Не нужно вручную склеивать строки с <code>&lt;b&gt;</code>.</p>
+<h2 id="базовый-пример">Базовый пример</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { format } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> message = <span class="hljs-title function_">format</span>(<span class="hljs-function">(<span class="hljs-params">{ b, i, c, n }</span>) =&gt;</span> [
+  <span class="hljs-title function_">b</span>(<span class="hljs-string">&quot;Запись подтверждена&quot;</span>), <span class="hljs-title function_">n</span>(<span class="hljs-number">2</span>),
+  <span class="hljs-string">&quot;Услуга: &quot;</span>, <span class="hljs-title function_">c</span>(<span class="hljs-string">&quot;Консультация&quot;</span>), <span class="hljs-title function_">n</span>(),
+  <span class="hljs-title function_">i</span>(<span class="hljs-string">&quot;Позвоним за час до приёма.&quot;</span>)
+]);
+
+<span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(message.<span class="hljs-property">text</span>, { <span class="hljs-attr">parse_mode</span>: message.<span class="hljs-property">parseMode</span> });
+</code></pre><p><code>format</code> возвращает <code>FormattedText</code>:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">class</span> <span class="hljs-title class_">FormattedText</span> {
+  <span class="hljs-attr">text</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">parseMode</span>: <span class="hljs-string">&quot;HTML&quot;</span> | <span class="hljs-literal">undefined</span>;
+}
+</code></pre><p>Если в тексте нет форматирования, <code>parseMode</code> будет <code>undefined</code>.</p>
+<h2 id="инструменты">Инструменты</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Инструмент</th>
+<th>Результат</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>b(x)</code></td>
+<td>жирный</td>
+</tr>
+<tr>
+<td><code>i(x)</code></td>
+<td>курсив</td>
+</tr>
+<tr>
+<td><code>u(x)</code></td>
+<td>подчёркнутый</td>
+</tr>
+<tr>
+<td><code>s(x)</code></td>
+<td>зачёркнутый</td>
+</tr>
+<tr>
+<td><code>sp(x)</code></td>
+<td>спойлер</td>
+</tr>
+<tr>
+<td><code>c(x)</code></td>
+<td>код</td>
+</tr>
+<tr>
+<td><code>l(text, url)</code></td>
+<td>ссылка</td>
+</tr>
+<tr>
+<td><code>p(x)</code></td>
+<td>экранированный текст</td>
+</tr>
+<tr>
+<td><code>n(count?)</code></td>
+<td>перенос строки</td>
+</tr>
+<tr>
+<td><code>bullet</code>, <code>check</code>, <code>cross</code>, <code>warning</code>, <code>rocket</code></td>
+<td>символы</td>
+</tr>
+</tbody></table></div>
+<h2 id="символы">Символы</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> message = <span class="hljs-title function_">format</span>(<span class="hljs-function">(<span class="hljs-params">{ check, b, n }</span>) =&gt;</span> [
+  check, <span class="hljs-string">&quot; &quot;</span>, <span class="hljs-title function_">b</span>(<span class="hljs-string">&quot;Готово&quot;</span>), <span class="hljs-title function_">n</span>(),
+  <span class="hljs-string">&quot;Заявка у менеджера.&quot;</span>
+]);
+</code></pre><p>Доступны: <code>bullet</code>, <code>dot</code>, <code>star</code>, <code>arrow</code>, <code>arrowRight</code>, <code>arrowLeft</code>, <code>arrowUp</code>, <code>arrowDown</code>, <code>check</code>, <code>cross</code>, <code>checkboxOn</code>, <code>checkboxOff</code>, <code>warning</code>, <code>info</code>, <code>question</code>, <code>lightbulb</code>, <code>gem</code>, <code>rocket</code>, <code>party</code>, <code>money</code>, <code>gift</code>, <code>hr</code>.</p>
+<h2 id="экранирование">Экранирование</h2>
+<p>Пользовательские строки экранируются автоматически:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> name = <span class="hljs-string">&quot;&lt;Иван &amp; Co&gt;&quot;</span>;
+<span class="hljs-keyword">const</span> message = <span class="hljs-title function_">format</span>(<span class="hljs-function">(<span class="hljs-params">{ b }</span>) =&gt;</span> [<span class="hljs-title function_">b</span>(name)]);
+<span class="hljs-comment">// &lt;b&gt;&amp;lt;Иван &amp;amp; Co&amp;gt;&lt;/b&gt;</span>
+</code></pre><p>Не вставляйте HTML вручную в <code>text</code>, если он пришёл от пользователя.</p>
+<h2 id="когда-не-использовать">Когда не использовать</h2>
+<p>Для простого текста без форматирования достаточно строки:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(<span class="hljs-string">&quot;Готово&quot;</span>);
+</code></pre><p><code>format</code> нужен, когда есть жирный текст, ссылки, код или несколько абзацев.</p>
+<h2 id="ui-kit">UI-kit</h2>
+<p>Готовые сообщения:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">WelcomeMessage</span>, <span class="hljs-title class_">SuccessMessage</span>, <span class="hljs-title class_">InfoPanel</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">const</span> welcome = <span class="hljs-title class_">WelcomeMessage</span>({ <span class="hljs-attr">title</span>: <span class="hljs-string">&quot;Добро пожаловать&quot;</span>, <span class="hljs-attr">subtitle</span>: <span class="hljs-string">&quot;Начнём&quot;</span> });
+<span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">reply</span>(welcome.<span class="hljs-property">text</span>, { <span class="hljs-attr">parse_mode</span>: welcome.<span class="hljs-property">parseMode</span> });
+</code></pre><h2 id="дальше">Дальше</h2>
+<ul>
+<li><a href="./views.html">Views</a></li>
+<li><a href="./keyboard.html">Keyboard</a></li>
+</ul>
+
+				<div class="pager">
+				<a href="keyboard.html"><small>Назад</small>Keyboard</a>
+				<a class="next" href="../guides/callbacks.html"><small>Дальше</small>Callback-кнопки</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#базовый-пример">Базовый пример</a>
+<a class="h2" href="#инструменты">Инструменты</a>
+<a class="h2" href="#символы">Символы</a>
+<a class="h2" href="#экранирование">Экранирование</a>
+<a class="h2" href="#когда-не-использовать">Когда не использовать</a>
+<a class="h2" href="#ui-kit">UI-kit</a>
+<a class="h2" href="#дальше">Дальше</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

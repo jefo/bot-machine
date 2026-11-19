@@ -8,11 +8,20 @@
 [![Tests](https://img.shields.io/badge/tests-108%20passing-brightgreen)](#тесты)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**[Открыть case study →](https://jefo.github.io/bot-machine/)**
+**[Открыть документацию →](https://jefo.github.io/bot-machine/)**
 
-<img src="docs/screens/bot-machine/05.png" alt="Подтверждение записи в боте на Bot Machine" width="360" />
+<img src="docs/assets/screens/booking.png" alt="Подтверждение записи в боте на Bot Machine" width="360" />
 
 ---
+
+## Документация
+
+Полная документация: **[jefo.github.io/bot-machine](https://jefo.github.io/bot-machine/)**
+
+- [Быстрый старт](https://jefo.github.io/bot-machine/getting-started.html)
+- [Flow и состояния](https://jefo.github.io/bot-machine/concepts/flows.html)
+- [Справочник API](https://jefo.github.io/bot-machine/api/reference.html)
+- [Ограничения](https://jefo.github.io/bot-machine/limits.html)
 
 ## Что это
 

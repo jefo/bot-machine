@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Flow и состояния — Bot Machine</title>
+	<meta name="description" content="Flow — это конечный автомат. У него есть состояния, экран для каждого состояния и переходы по событиям." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="flows.html" class="active">Flow и состояния</a>
+<a href="views.html">Views</a>
+<a href="commands.html">Commands и Queries</a>
+<a href="router.html">Router</a>
+<a href="context.html">Context</a>
+<a href="sessions.html">Sessions</a>
+<a href="keyboard.html">Keyboard</a>
+<a href="text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="../guides/callbacks.html">Callback-кнопки</a>
+<a href="../guides/text-input.html">Текстовый ввод</a>
+<a href="../guides/appointment.html">Форма записи</a>
+<a href="../guides/errors.html">Ошибки и валидация</a>
+<a href="../guides/testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="flow-и-состояния">Flow и состояния</h1>
+<p>Flow — это конечный автомат. У него есть состояния, экран для каждого состояния и переходы по событиям.</p>
+<h2 id="определение">Определение</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">import</span> { createFlow } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@bot-machine/telegram-sdk&quot;</span>;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> flow = <span class="hljs-title function_">createFlow</span>(<span class="hljs-string">&quot;appointment&quot;</span>, {
+  <span class="hljs-attr">index</span>: {
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({ <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Запись на приём&quot;</span> })
+  },
+  <span class="hljs-attr">service</span>: {
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({ <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Выберите услугу&quot;</span> })
+  }
+});
+</code></pre><p><code>createFlow</code> возвращает:</p>
+<pre><code class="hljs language-ts">{
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;appointment&quot;</span>,
+  <span class="hljs-attr">config</span>: { <span class="hljs-attr">index</span>: {...}, <span class="hljs-attr">service</span>: {...} },
+  <span class="hljs-attr">states</span>: { <span class="hljs-attr">index</span>: <span class="hljs-string">&quot;index&quot;</span>, <span class="hljs-attr">service</span>: <span class="hljs-string">&quot;service&quot;</span> }
+}
+</code></pre><p><code>states</code> нужен для type-safe переходов:</p>
+<pre><code class="hljs language-ts"><span class="hljs-attr">nextState</span>: flow.<span class="hljs-property">states</span>.<span class="hljs-property">service</span>
+</code></pre><p>Внутри самого объекта <code>flow</code> на него ссылаться нельзя — используйте строку.</p>
+<h2 id="состояние">Состояние</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">FlowState</span> {
+  <span class="hljs-attr">component</span>: <span class="hljs-function">(<span class="hljs-params"><span class="hljs-attr">props</span>: <span class="hljs-built_in">any</span></span>) =&gt;</span> <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-title class_">MessagePayload</span>&gt;;
+  <span class="hljs-attr">onEnter</span>?: <span class="hljs-title class_">BotQuery</span>;
+  <span class="hljs-attr">onAction</span>?: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-title class_">ActionHandler</span>&gt;;
+  <span class="hljs-attr">onText</span>?: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-title class_">ActionHandler</span>&gt;;
+}
+</code></pre><ul>
+<li><code>component</code> — что показать.</li>
+<li><code>onEnter</code> — что загрузить перед показом.</li>
+<li><code>onAction</code> — реакция на callback-кнопки.</li>
+<li><code>onText</code> — реакция на текстовые сообщения.</li>
+</ul>
+<p>Состояние <code>index</code> — стартовое. В него попадает пользователь после <code>ctx.enterFlow(flow.name)</code>.</p>
+<h2 id="переход">Переход</h2>
+<pre><code class="hljs language-ts">{
+  <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({ <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Что дальше?&quot;</span> }),
+  <span class="hljs-attr">onAction</span>: {
+    <span class="hljs-attr">next</span>: {
+      <span class="hljs-attr">command</span>: someCommand,
+      <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;result&quot;</span>
+    }
+  }
+}
+</code></pre><p><code>nextState</code> может быть:</p>
+<ul>
+<li>строкой — именем следующего состояния;</li>
+<li>функцией от результата команды;</li>
+<li>не указан — flow завершится, сессия очистится;</li>
+<li><code>refresh: true</code> вместо <code>nextState</code> — перерисовать текущее состояние.</li>
+</ul>
+<pre><code class="hljs language-ts"><span class="hljs-attr">nextState</span>: <span class="hljs-function">(<span class="hljs-params">result</span>) =&gt;</span> (result.<span class="hljs-property">ok</span> ? <span class="hljs-string">&quot;done&quot;</span> : <span class="hljs-string">&quot;error&quot;</span>)
+</code></pre><h2 id="вход-и-выход">Вход и выход</h2>
+<p><code>ctx.enterFlow(&quot;appointment&quot;)</code>:</p>
+<ul>
+<li>записывает <code>flowName</code> и <code>flowState = &quot;index&quot;</code> в сессию;</li>
+<li>сразу вызывает роутер, чтобы отрисовать стартовый экран.</li>
+</ul>
+<p>Выход происходит, когда у действия нет <code>nextState</code>. Сессия очищается от <code>flowName</code> и <code>flowState</code>.</p>
+<h2 id="пример-счётчик">Пример: счётчик</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">const</span> increment = <span class="hljs-title function_">createCommand</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;increment&quot;</span>,
+  <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; {
+    ctx.<span class="hljs-property">session</span>.<span class="hljs-property">count</span> = (ctx.<span class="hljs-property">session</span>.<span class="hljs-property">count</span> ?? <span class="hljs-number">0</span>) + <span class="hljs-number">1</span>;
+  }
+});
+
+<span class="hljs-keyword">const</span> flow = <span class="hljs-title function_">createFlow</span>(<span class="hljs-string">&quot;counter&quot;</span>, {
+  <span class="hljs-attr">index</span>: {
+    <span class="hljs-attr">onEnter</span>: <span class="hljs-title function_">createQuery</span>({
+      <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;getCount&quot;</span>,
+      <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; ({ <span class="hljs-attr">count</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">count</span> ?? <span class="hljs-number">0</span> })
+    }),
+    <span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> ({ count }: { <span class="hljs-attr">count</span>: <span class="hljs-built_in">number</span> }) =&gt; ({
+      <span class="hljs-attr">text</span>: <span class="hljs-string">`Счётчик: <span class="hljs-subst">${count}</span>`</span>,
+      <span class="hljs-attr">reply_markup</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;+1&quot;</span>, <span class="hljs-string">&quot;increment&quot;</span>)
+        .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Сброс&quot;</span>, <span class="hljs-string">&quot;reset&quot;</span>)
+        .<span class="hljs-title function_">inline</span>()
+    }),
+    <span class="hljs-attr">onAction</span>: {
+      <span class="hljs-attr">increment</span>: { <span class="hljs-attr">command</span>: increment, <span class="hljs-attr">refresh</span>: <span class="hljs-literal">true</span> },
+      <span class="hljs-attr">reset</span>: {
+        <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+          <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;reset&quot;</span>,
+          <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+          <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; {
+            ctx.<span class="hljs-property">session</span>.<span class="hljs-property">count</span> = <span class="hljs-number">0</span>;
+          }
+        }),
+        <span class="hljs-attr">refresh</span>: <span class="hljs-literal">true</span>
+      }
+    }
+  }
+});
+</code></pre><p><code>refresh: true</code> важен: без него flow завершится, потому что <code>nextState</code> не задан.</p>
+<h2 id="паттерны">Паттерны</h2>
+<p>Ключи <code>onAction</code> и <code>onText</code> — строки или RegExp.</p>
+<ul>
+<li><code>&quot;confirm&quot;</code> — точное совпадение callback data.</li>
+<li><code>&quot;service::id&quot;</code> — параметр <code>id</code> попадёт в <code>ctx.params.id</code>.</li>
+<li><code>&quot;:name&quot;</code> — весь текст попадёт в <code>ctx.params.name</code>.</li>
+<li><code>/^item_\d+$/</code> — регулярное выражение.</li>
+</ul>
+<p>Параметры и текст передаются в команду как вход:</p>
+<pre><code class="hljs language-ts"><span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;saveName&quot;</span>,
+  <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({ <span class="hljs-attr">name</span>: z.<span class="hljs-title function_">string</span>() }),
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> ({ name }, ctx) =&gt; {
+    ctx.<span class="hljs-property">session</span>.<span class="hljs-property">name</span> = name;
+  }
+})
+</code></pre><h2 id="onenter-и-props">onEnter и props</h2>
+<p><code>onEnter</code> выполняется перед <code>component</code>:</p>
+<pre><code class="hljs language-ts"><span class="hljs-attr">onEnter</span>: <span class="hljs-title function_">createQuery</span>({
+  <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;getBooking&quot;</span>,
+  <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; ({
+    <span class="hljs-attr">service</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">service</span>,
+    <span class="hljs-attr">phone</span>: ctx.<span class="hljs-property">session</span>.<span class="hljs-property">phone</span>
+  })
+}),
+<span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> (<span class="hljs-attr">props</span>: { <span class="hljs-attr">service</span>: <span class="hljs-built_in">string</span>; <span class="hljs-attr">phone</span>: <span class="hljs-built_in">string</span> }) =&gt; ({
+  <span class="hljs-attr">text</span>: <span class="hljs-string">`Услуга: <span class="hljs-subst">${props.service}</span>\nТелефон: <span class="hljs-subst">${props.phone}</span>`</span>
+})
+</code></pre><p>Результат предыдущей команды также передаётся в <code>onEnter</code> как вход. Это позволяет строить экран подтверждения из результата действия.</p>
+<h2 id="ошибки">Ошибки</h2>
+<p>Если команда или запрос бросили ошибку, <code>FlowController</code>:</p>
+<ul>
+<li>логирует её;</li>
+<li>отправляет пользователю «Произошла ошибка. Попробуйте еще раз.»;</li>
+<li>оставляет состояние прежним.</li>
+</ul>
+<p>Это базовое поведение. Для своих сообщений используйте <a href="../guides/errors.html">обработку ошибок</a>.</p>
+
+				<div class="pager">
+				<a href="../getting-started.html"><small>Назад</small>Быстрый старт</a>
+				<a class="next" href="views.html"><small>Дальше</small>Views</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#определение">Определение</a>
+<a class="h2" href="#состояние">Состояние</a>
+<a class="h2" href="#переход">Переход</a>
+<a class="h2" href="#вход-и-выход">Вход и выход</a>
+<a class="h2" href="#пример-счётчик">Пример: счётчик</a>
+<a class="h2" href="#паттерны">Паттерны</a>
+<a class="h2" href="#onenter-и-props">onEnter и props</a>
+<a class="h2" href="#ошибки">Ошибки</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>

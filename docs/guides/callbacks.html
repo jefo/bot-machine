@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Callback-кнопки — Bot Machine</title>
+	<meta name="description" content="Callback-кнопка отправляет callback_data вместо текста. В flow она обрабатывается через onAction." />
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2315161c'/%3E%3Cpath d='M8 10h16v2H8zm0 5h10v2H8zm0 5h13v2H8z' fill='%23faf9f5'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="../assets/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="../index.html">Bot Machine <small>0.1.11</small></a>
+		<nav class="topnav">
+			<a href="https://github.com/kaizin-lab/bot-machine">GitHub</a>
+			<a href="https://www.npmjs.com/package/@bot-machine/telegram-sdk">npm</a>
+			<a class="keep" href="https://github.com/jefo">портфолио</a>
+		</nav>
+		<button class="menu" type="button" aria-label="Открыть меню">меню</button>
+	</header>
+	<div class="layout">
+		<aside class="sidebar">
+			
+			<div class="nav-group">
+				<span>Начало</span>
+				<a href="../index.html">Обзор</a>
+<a href="../getting-started.html">Быстрый старт</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Основы</span>
+				<a href="../concepts/flows.html">Flow и состояния</a>
+<a href="../concepts/views.html">Views</a>
+<a href="../concepts/commands.html">Commands и Queries</a>
+<a href="../concepts/router.html">Router</a>
+<a href="../concepts/context.html">Context</a>
+<a href="../concepts/sessions.html">Sessions</a>
+<a href="../concepts/keyboard.html">Keyboard</a>
+<a href="../concepts/text.html">Text</a>
+			</div>
+
+			<div class="nav-group">
+				<span>Руководства</span>
+				<a href="callbacks.html" class="active">Callback-кнопки</a>
+<a href="text-input.html">Текстовый ввод</a>
+<a href="appointment.html">Форма записи</a>
+<a href="errors.html">Ошибки и валидация</a>
+<a href="testing.html">Тесты</a>
+			</div>
+
+			<div class="nav-group">
+				<span>API</span>
+				<a href="../api/reference.html">Справочник</a>
+			</div>
+
+			<div class="nav-group">
+				<span>О фреймворке</span>
+				<a href="../architecture.html">Архитектура</a>
+<a href="../production.html">Production</a>
+<a href="../limits.html">Ограничения</a>
+<a href="../faq.html">FAQ</a>
+			</div>
+		</aside>
+		<main class="content">
+			<article class="prose">
+				<h1 id="callback-кнопки">Callback-кнопки</h1>
+<p>Callback-кнопка отправляет <code>callback_data</code> вместо текста. В flow она обрабатывается через <code>onAction</code>.</p>
+<h2 id="кнопка">Кнопка</h2>
+<pre><code class="hljs language-ts"><span class="hljs-attr">component</span>: <span class="hljs-title function_">async</span> () =&gt; ({
+  <span class="hljs-attr">text</span>: <span class="hljs-string">&quot;Подтвердить запись?&quot;</span>,
+  <span class="hljs-attr">reply_markup</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+    .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Да&quot;</span>, <span class="hljs-string">&quot;confirm&quot;</span>)
+    .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Нет&quot;</span>, <span class="hljs-string">&quot;cancel&quot;</span>)
+    .<span class="hljs-title function_">inline</span>()
+})
+</code></pre><h2 id="обработчик">Обработчик</h2>
+<pre><code class="hljs language-ts"><span class="hljs-attr">onAction</span>: {
+  <span class="hljs-attr">confirm</span>: {
+    <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+      <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;confirmBooking&quot;</span>,
+      <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+      <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; {
+        ctx.<span class="hljs-property">session</span>.<span class="hljs-property">confirmed</span> = <span class="hljs-literal">true</span>;
+      }
+    }),
+    <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;done&quot;</span>
+  },
+  <span class="hljs-attr">cancel</span>: {
+    <span class="hljs-attr">command</span>: <span class="hljs-title function_">createCommand</span>({
+      <span class="hljs-attr">name</span>: <span class="hljs-string">&quot;cancelBooking&quot;</span>,
+      <span class="hljs-attr">input</span>: z.<span class="hljs-title function_">object</span>({}),
+      <span class="hljs-attr">execute</span>: <span class="hljs-title function_">async</span> (_, ctx) =&gt; {
+        ctx.<span class="hljs-property">session</span>.<span class="hljs-property">confirmed</span> = <span class="hljs-literal">false</span>;
+      }
+    }),
+    <span class="hljs-attr">nextState</span>: <span class="hljs-string">&quot;cancelled&quot;</span>
+  }
+}
+</code></pre><h2 id="callback-вне-flow">Callback вне flow</h2>
+<pre><code class="hljs language-ts">router.<span class="hljs-title function_">onCallbackQuery</span>(<span class="hljs-string">&quot;help&quot;</span>, <span class="hljs-title function_">async</span> (ctx) =&gt; {
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">answerCallbackQuery</span>();
+  <span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">editMessageText</span>(<span class="hljs-string">&quot;Справка&quot;</span>);
+});
+</code></pre><p><code>ctx.answerCallbackQuery()</code> обязателен: он убирает индикатор загрузки на кнопке. Можно передать текст:</p>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">await</span> ctx.<span class="hljs-title function_">answerCallbackQuery</span>(<span class="hljs-string">&quot;Сохранено&quot;</span>);
+</code></pre><h2 id="редактирование-сообщения">Редактирование сообщения</h2>
+<p>В flow callback автоматически редактирует сообщение, на котором нажали кнопку. В stateless-обработчике вызовите <code>ctx.editMessageText</code> сами.</p>
+<p>Если сообщение не содержит текста (например, фото), <code>editMessageText</code> не сработает. В этом случае отправьте новое сообщение.</p>
+<h2 id="параметры">Параметры</h2>
+<pre><code class="hljs language-ts"><span class="hljs-keyword">new</span> <span class="hljs-title class_">Keyboard</span>()
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Удалить&quot;</span>, <span class="hljs-string">&quot;delete::42&quot;</span>)
+  .<span class="hljs-title function_">text</span>(<span class="hljs-string">&quot;Открыть&quot;</span>, <span class="hljs-string">&quot;open::42&quot;</span>)
+</code></pre><pre><code class="hljs language-ts"><span class="hljs-attr">onAction</span>: {
+  <span class="hljs-string">&quot;delete::id&quot;</span>: {
+    <span class="hljs-attr">command</span>: deleteItemCommand,
+    <span class="hljs-attr">refresh</span>: <span class="hljs-literal">true</span>
+  }
+}
+</code></pre><p><code>ctx.params.id</code> будет <code>&quot;42&quot;</code>, команда получит его во входе.</p>
+<h2 id="ограничения-telegram">Ограничения Telegram</h2>
+<ul>
+<li><code>callback_data</code> — до 64 байт.</li>
+<li>Кириллица занимает 2 байта на символ, JSON быстро выходит за лимит.</li>
+<li>Используйте короткие коды: <code>service::consult</code>, а не <code>{&quot;service&quot;:&quot;Консультация&quot;}</code>.</li>
+<li>Старые кнопки остаются в истории. Если пользователь нажмёт кнопку из старого сообщения, flow обработает её в текущем состоянии; предусмотрите это.</li>
+</ul>
+<h2 id="полный-пример">Полный пример</h2>
+<p>Смотрите <a href="./appointment.html">форму записи</a> — там callback-кнопки, текст и подтверждение собраны вместе.</p>
+
+				<div class="pager">
+				<a href="../concepts/text.html"><small>Назад</small>Text</a>
+				<a class="next" href="text-input.html"><small>Дальше</small>Текстовый ввод</a>
+			</div>
+				<div class="footer">Bot Machine 0.1.11 · MIT · <a href="https://github.com/kaizin-lab/bot-machine">исходный репозиторий</a></div>
+			</article>
+		</main>
+		<aside class="toc">
+			<span>На этой странице</span>
+			<a class="h2" href="#кнопка">Кнопка</a>
+<a class="h2" href="#обработчик">Обработчик</a>
+<a class="h2" href="#callback-вне-flow">Callback вне flow</a>
+<a class="h2" href="#редактирование-сообщения">Редактирование сообщения</a>
+<a class="h2" href="#параметры">Параметры</a>
+<a class="h2" href="#ограничения-telegram">Ограничения Telegram</a>
+<a class="h2" href="#полный-пример">Полный пример</a>
+		</aside>
+	</div>
+	<script src="../assets/docs.js"></script>
+</body>
+</html>
